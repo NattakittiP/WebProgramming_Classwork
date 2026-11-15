@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRISM Sample Play</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one question card on a quiet field; the only loud element is the spectral month track that fills as the year passes. */
+:root{
+  --bg:#f3f4f8; --surface:#ffffff; --ink:#151827; --muted:#5d6278; --line:#dadced; --accent:#4b3fd1;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans Thai", "Segoe UI", system-ui, sans-serif;
+  --spectrum:linear-gradient(90deg,#e5484d,#f08c00,#e6c200,#2f9e44,#1c7ed6,#5f3dc4,#ae3ec9);
+  --ok:#2b8a3e; --warn:#b35c00;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#0f1120; --surface:#181b2e; --ink:#eceefb; --muted:#a3a8c4; --line:#2c3150; --accent:#9d93ff; --ok:#69db7c; --warn:#ffa94d; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --bg:#0f1120; --surface:#181b2e; --ink:#eceefb; --muted:#a3a8c4; --line:#2c3150; --accent:#9d93ff; --ok:#69db7c; --warn:#ffa94d; color-scheme:dark; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;min-height:100%}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 48px;display:grid;gap:16px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:.04em}
+.brand small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:.02em;color:var(--muted)}
+.toggle{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.track{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}
+.track span{height:8px;border-radius:4px;background:var(--line)}
+.track span.on{background:var(--spectrum);background-size:1200% 100%}
+.trackmeta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;display:grid;gap:16px}
+.eyebrow{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.03em}
+h1,h2{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:28px;font-weight:700}
+h2{font-size:22px;font-weight:700}
+.th{color:var(--muted);font-size:15px;margin-top:4px}
+body.noth .th{display:none}
+.idea{border-left:4px solid var(--accent);padding:8px 12px;background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:0 8px 8px 0;font-weight:600}
+.opts{display:grid;gap:8px}
+button{font:inherit;color:inherit;cursor:pointer}
+.opt{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;text-align:left;width:100%;background:transparent;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--accent)}
+.opt.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.opt .k{font-family:var(--display);font-weight:700;color:var(--accent);min-width:1.4em}
+.opt .t{display:block;font-weight:500}
+.opt .t2{display:block;color:var(--muted);font-size:14px}
+body.noth .opt .t2{display:none}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.scale10{display:grid;grid-template-columns:repeat(11,1fr);gap:6px}
+.scale10 button{border:1.5px solid var(--line);background:transparent;border-radius:8px;padding:10px 0;font-variant-numeric:tabular-nums;font-weight:600}
+.scale10 button:hover,.scale10 button.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.ends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);gap:12px}
+.likert{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.likert button{border-radius:50%;border:2px solid var(--line);background:transparent;aspect-ratio:1;padding:0;flex:none}
+.likert button:nth-child(1),.likert button:nth-child(9){width:46px;border-color:color-mix(in srgb,var(--accent) 75%,var(--line))}
+.likert button:nth-child(2),.likert button:nth-child(8){width:40px;border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.likert button:nth-child(3),.likert button:nth-child(7){width:34px;border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.likert button:nth-child(4),.likert button:nth-child(6){width:29px}
+.likert button:nth-child(5){width:24px}
+.pitch{border-left:4px solid var(--accent);background:color-mix(in srgb,var(--accent) 7%,transparent);border-radius:0 10px 10px 0;padding:12px 16px}
+.pitch .who{font-weight:600;color:var(--accent);font-size:14px}
+.pitch p{margin:6px 0 0}
+.sub{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.qtext{font-weight:600}
+.qtext .th{font-weight:400}
+.scale5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.scale5 button{border:1.5px solid var(--line);background:transparent;border-radius:8px;padding:8px 4px;display:grid;gap:2px;font-size:12px;color:var(--muted)}
+.scale5 button b{font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
+.scale5 button:hover,.scale5 button.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+body.noth .scale5 .t2{display:none}
+.likert button:hover,.likert button.sel{background:var(--accent);border-color:var(--accent)}
+.nav{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.btn{border:none;background:var(--accent);color:#fff;padding:10px 18px;border-radius:10px;font-weight:600}
+:root[data-theme="dark"] .btn{color:#0f1120}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn{color:#0f1120}}
+.ghost{background:transparent;border:1.5px solid var(--line);padding:9px 16px;border-radius:10px;color:var(--muted)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+input[type=text],select{font:inherit;color:inherit;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.note{font-size:14px;color:var(--muted);border:1px dashed var(--line);border-radius:10px;padding:10px 12px}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.result-hero{display:grid;gap:6px}
+.code{font-family:var(--display);font-weight:800;font-size:44px;line-height:1;background:var(--spectrum);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:110px 1fr 40px;gap:10px;align-items:center;font-size:14px}
+.bar .b{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar .b i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.bar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+.research{border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+.research .eyebrow{color:var(--warn)}
+.fade{animation:fade .25s ease-out}
+@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.fade{animation:none}.opt{transition:none}}
+@media (max-width:480px){h1{font-size:24px}.scale10{grid-template-columns:repeat(6,1fr)}.likert{gap:2px}.likert button:nth-child(1),.likert button:nth-child(9){width:34px}.likert button:nth-child(2),.likert button:nth-child(8){width:30px}.likert button:nth-child(3),.likert button:nth-child(7){width:26px}.likert button:nth-child(4),.likert button:nth-child(6){width:22px}.likert button:nth-child(5){width:18px}.bar{grid-template-columns:84px 1fr 36px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">PRISM<small>Discover Your Role · ตัวอย่างสำหรับทดลองเล่น</small></div>
+    <label class="toggle" for="thToggle"><input type="checkbox" id="thToggle" checked> แสดงคำแปลไทย</label>
+  </header>
+  <div>
+    <div class="track" id="track" aria-hidden="true"></div>
+    <div class="trackmeta"><span id="monthLabel">Before you start</span><span id="countLabel"></span></div>
+  </div>
+  <main id="stage" class="card fade" aria-live="polite"></main>
+  <p class="note">ตัวอย่างนี้ตรงกับชุดคำถาม v2 ใน protocol ส่วน 5 (11 ข้อใหญ่ 38 ข้อย่อย) และใช้กติกาเลือกตัวละครที่อนุมัติใน scoring ส่วน 3 ส่วนสำหรับผู้วิจัยท้ายหน้าผลแสดงคะแนน ชุดที่เท่ากัน วิธีได้ผล และสถานะ ซึ่งผู้ตอบจริงไม่เห็น คำตอบไม่ถูกส่งหรือบันทึกที่ใด</p>
+</div>
+<script>
+const CHARS = {"Tα": {"th": "ผู้ส่งสาร", "en": "The Herald", "defTh": "รับหน้าที่เป็นตัวแทนของประเด็นและรับผิดชอบสารที่ทีมจะส่งถึงผู้เกี่ยวข้อง กำหนดว่าต้องการให้ผู้ฟังพิจารณาเรื่องใด เลือกใจความสำคัญ และนำทีมตกลงข้อความก่อนออกไปสื่อสาร เมื่อถึงจุดตัดสินใจจะพร้อมอธิบายข้อเสนอและรับคำถามด้วยตนเอง ผลงานคือสารหลักที่ชัดเจนและมีเจ้าภาพการนำเสนอ การรับผิดชอบครอบคลุมผลของข้อความที่ใช้ จึงต้องเปิดรับข้อทักท้วง ตรวจความเข้าใจของทีม และให้ผู้มีความรู้ในแต่ละส่วนช่วยอธิบาย", "defEn": "This character takes ownership of representing an issue and deciding what the team needs an audience to consider. They clarify the central message, lead agreement on its meaning, and step forward to explain the proposal at important decision points. Their contribution is a clear message with accountable representation. They accept responsibility for the consequences of speaking on behalf of the team, invite important objections before presenting, and give knowledgeable colleagues space to explain relevant details. Their communication brings the issue into consideration and supports purposeful movement."}, "Tβ": {"th": "ผู้รวมพลัง", "en": "The Unifier", "defTh": "ช่วยให้เสียงและผลงานของทีมได้รับการรับฟังผ่านการสื่อสารที่สมาชิกมีส่วนร่วม ชวนทีมตกลงสารหลัก รับข้อเสนอจากผู้ร่วมงาน และช่วยคนที่ยังไม่มั่นใจเตรียมคำอธิบาย เมื่อการออกหน้าเป็นตัวแทนช่วยขยายเสียงของทีมได้ก็พร้อมรับหน้าที่นั้น ผลงานคือการนำเสนอที่สมาชิกเข้าใจ รู้สึกเป็นเจ้าของ และพร้อมสนับสนุน การช่วยเหลือมุ่งให้คนอื่นสื่อสารได้ด้วยตนเอง พร้อมรักษาใจความร่วมให้ชัด ต้องทวนเป้าหมายและขอบเขตก่อนรับความคาดหวังเพิ่ม", "defEn": "This character builds support for an issue by helping the team express a shared message. They invite contributions, prepare colleagues who need support with presenting, and represent the group when that helps its work receive attention. Their contribution is a presentation that members understand, own, and support. They create opportunities for people to communicate through their own voices and connect those contributions to a common purpose. Clear agreements about the message and acceptable adjustments help them manage expectations and sustain collective advocacy."}, "TΩ": {"th": "ผู้ยืนหยัด", "en": "The Stalwart", "defTh": "ใช้ดุลยพินิจของตนรักษาจุดยืนและสื่อสารประเด็นที่เห็นว่าจำเป็น แม้เรื่องนั้นยังไม่ได้รับการยอมรับกว้างขวาง เหตุผล ข้อเท็จจริง และความรับผิดชอบต่อประเด็นเป็นฐานของการออกหน้า เมื่อเห็นข้อกังวลสำคัญกำลังถูกตัดออก จะอธิบายว่าทำไมควรได้รับการพิจารณาและเสนอวิธีสื่อสารที่เหมาะสม ผลงานคือจุดยืนที่มีเหตุผลและไปถึงผู้เกี่ยวข้อง ความเป็นอิสระดำเนินภายใต้ข้อตกลงร่วม เปิดให้ตรวจเหตุผล รับฟังข้อทักท้วง และหาจุดร่วมที่ทีมเดินต่อด้วยกันได้", "defEn": "This character uses independent judgment to sustain a reasoned position on an issue that still needs attention. Evidence, principles, and responsibility for the message guide their willingness to speak before broad acceptance develops. They raise concerns about dropping an important issue and propose a responsible way to communicate it. Their contribution is a defensible position brought to relevant people. They explain their reasoning openly, listen to objections, and seek workable common ground under shared commitments. This allows independent advocacy to remain connected to collective action."}, "Tδ": {"th": "ผู้ขับเคลื่อน", "en": "The Mobilizer", "defTh": "รักษาแรงขับของประเด็นด้วยการสื่อสารและติดตามอย่างต่อเนื่องในสถานการณ์จริง ซ้อมและปรับสารร่วมกับทีม ออกไปพบผู้เกี่ยวข้อง รับคำถาม และส่งข้อกังวลกลับมาให้ทีมใช้ดำเนินการ ความรับผิดชอบแสดงผ่านการอยู่กับงานสื่อสารจนเกิดความคืบหน้า ผลงานคือการนำเสนอภาคสนามที่มีใจความชัด พร้อมข้อมูลตอบกลับและจุดติดตามที่ใช้ต่อได้ การลงมือครอบคลุมการรักษาความถูกต้องของสารและการตอบสนองต่อสิ่งที่พบ ต้องแบ่งเจ้าภาพและเตรียมการส่งต่อ", "defEn": "This character sustains an issue through practical communication and continued contact with the people it needs to reach. They rehearse the message with the team, adapt its delivery, meet stakeholders, answer questions, and return concerns for further action. Their contribution is communication in real settings supported by a clear message, useful feedback, and dependable follow up. They take responsibility for keeping representation active as circumstances change. Sharing communication tasks and preparing clear handovers allow the team to maintain momentum through continuing work."}, "Cα": {"th": "ผู้กำหนดทิศ", "en": "The Strategist", "defTh": "รับเจ้าภาพการเลือกทิศทางและลำดับความสำคัญเมื่อทีมเผชิญหลายทางเลือก พิจารณาเป้าหมาย ทรัพยากร ข้อจำกัด และผลที่ต้องแลก แล้วตัดสินใจว่าสิ่งใดควรเริ่ม รอ หรือหยุด อธิบายเหตุผลของเส้นทางที่เลือกและการจัดสรรทรัพยากรให้ทีมเข้าใจ ผลงานคือยุทธศาสตร์ที่มีลำดับชัด พร้อมสัญญาณว่าควรเปลี่ยนแผนเมื่อใด ความรับผิดชอบครอบคลุมผลของการเลือกและการทบทวนสมมติฐาน เปิดให้ผู้ร่วมงานตรวจเหตุผล และปรับทางเดินเมื่อข้อมูลใหม่เปลี่ยนฐานของการตัดสินใจ", "defEn": "This character owns the choice of direction when several priorities compete for attention and resources. They weigh possible routes against goals, constraints, and tradeoffs, then decide what should begin, wait, or stop. They explain the reasons for that order and make the intended use of resources clear. Their contribution is a chosen strategy with explicit priorities and signals for changing course. Taking responsibility includes inviting scrutiny of assumptions and revising the decision when new information changes its basis, keeping the team's effort connected to its goals."}, "Cβ": {"th": "ผู้ประสานแผน", "en": "The Aligner", "defTh": "ช่วยให้คนต่างหน้าที่มีแผนร่วมที่เข้าใจและนำไปทำได้ เริ่มจากรับฟังเป้าหมาย ภาระ ทรัพยากร และข้อจำกัดของผู้เกี่ยวข้อง แล้วเชื่อมข้อมูลเหล่านั้นเป็นลำดับความสำคัญที่ตอบจุดมุ่งหมายเดียวกัน การสนับสนุนเกิดผ่านการทำให้แต่ละฝ่ายเห็นเหตุผลและความรับผิดชอบของตนในแผน ผลงานคือแผนที่มีข้อตกลงและความพร้อมร่วมดำเนินการ ต้องชวนทีมเลือกสิ่งที่สำคัญ ระบุเรื่องที่ควรรอ และอธิบายขอบเขตของคำขอ", "defEn": "This character helps different contributors develop a shared plan that they can understand and carry out. They listen to goals, workloads, resources, and practical needs, then connect this information into priorities serving the common purpose. Support appears through helping each party recognize its responsibilities and the reasons behind the sequence. Their contribution is an agreed plan with participation and commitment from those who will use it. They guide discussion about essential work, requests that should wait, and workable boundaries so that cooperation supports a clear strategic focus."}, "CΩ": {"th": "ผู้หยั่งการณ์", "en": "The Futurist", "defTh": "ใช้ดุลยพินิจอิสระสำรวจทางเดินเชิงยุทธศาสตร์ก่อนเสนอเส้นทางให้ทีมเลือก คิดหลายฉากทัศน์ ตรวจสมมติฐาน และพิจารณาเงื่อนไขที่จะทำให้แต่ละทางสำเร็จหรือติดขัด ผลงานคือชุดทางเลือกที่มีเหตุผล ทางสำรอง และสัญญาณสำหรับตัดสินใจภายใต้ความไม่แน่นอน อิสระอยู่ที่การเลือกวิธีคิดและการตั้งคำถามกับแผนที่มีอยู่ โดยตกลงขอบเขตและเวลาส่งต่อกับทีม ต้องทำให้กระบวนการคิดที่ซับซ้อนกลายเป็นข้อเลือกที่เข้าใจง่าย เพื่อให้ผู้เกี่ยวข้องใช้พิจารณาทิศทางได้ทันจังหวะและทบทวนเมื่อบริบทเปลี่ยน", "defEn": "This character explores strategic routes through independent judgment and develops alternatives for the team to consider. They build scenarios, examine assumptions, and identify conditions that could help or obstruct each route. Their contribution is a set of strategic choices with reasons, contingencies, and signals for decisions under uncertainty. They choose their thinking methods within agreed boundaries and communication times. Making complex reasoning understandable is part of their responsibility, so the team receives usable options in time and can reconsider its direction as circumstances change."}, "Cδ": {"th": "ผู้แปลงแผน", "en": "The Implementer", "defTh": "แปลงยุทธศาสตร์ที่ทีมเลือกให้เป็นลำดับการลงมือที่เริ่มทำและติดตามได้ แตกเป้าหมายใหญ่เป็นเป้าหมายย่อย ระบุงาน ผู้รับผิดชอบ และจุดที่ต้องตัดสินใจเพิ่มเติม ความต่อเนื่องอยู่ที่การพาทีมเดินตามเส้นทางที่เชื่อมกับเหตุผลเชิงยุทธศาสตร์ ผลงานคือแผนดำเนินงานที่แต่ละขั้นมีจุดหมายและจังหวะทบทวนชัดเจน ต้องตรวจว่าขั้นตอนยังช่วยเป้าหมายหรือไม่ รับรู้ข้อจำกัดจากการปฏิบัติ และปรับหรือตัดงานที่หมดความจำเป็น", "defEn": "This character turns a chosen strategy into a sequence that people can begin, follow, and review. They break broad aims into smaller objectives, identify tasks and owners, and locate points requiring further decisions. Their contribution is an operational plan whose steps remain connected to strategic intent. Responsibility appears through carrying the plan into practical action and checking its continuing relevance. They listen to constraints arising during execution, adjust the sequence, and remove unnecessary steps so that progress continues to serve the purpose of the strategy."}, "Dα": {"th": "ผู้ชี้แจ้ง", "en": "The Luminary", "defTh": "นำทีมตัดสินใจโดยทำให้เห็นว่าข้อสรุปใดมีหลักฐานรองรับและส่วนใดยังไม่แน่นอน จัดข้อมูลสำคัญ อธิบายข้อจำกัด และรับเจ้าภาพการตกลงว่าจะใช้ข้อสรุปหรือข้อความใด การนำอาศัยเหตุผลที่ผู้ร่วมงานตรวจสอบและตั้งคำถามได้ ผลงานคือความเข้าใจเชิงหลักฐานที่ทีมใช้ดำเนินงาน พร้อมขอบเขตของสิ่งที่กล่าวอ้าง ต้องเปิดรับข้อมูลหลายรูปแบบ รวมถึงประสบการณ์ที่ยังไม่มีตัวเลขรองรับ และทำให้ความไม่แน่นอนปรากฏในการหารือ พร้อมทบทวนเมื่อข้อมูลเปลี่ยน", "defEn": "This character leads decisions by clarifying which conclusions the evidence supports and where uncertainty remains. They organize important findings, explain limitations, and take ownership of guiding agreement on what can reasonably be claimed or used. Their contribution is shared understanding grounded in evidence and ready to inform action. They make their reasoning available for questions and include information in different forms, including experiences that lack numerical measures. Keeping assumptions and uncertainty visible helps the team use its knowledge responsibly and revise conclusions when new evidence arrives."}, "Dβ": {"th": "ผู้ถ่ายทอด", "en": "The Interpreter", "defTh": "ช่วยให้คนต่างหน้าที่และพื้นฐานทางเทคนิคเข้าใจและใช้หลักฐานได้ เริ่มจากคำถามว่าผู้รับข้อมูลต้องตัดสินใจอะไร แล้วจัดสาระ อธิบายข้อจำกัด และตอบข้อสงสัยด้วยภาษาที่เหมาะกับการใช้งาน การสนับสนุนคือทำให้ผู้ร่วมงานมีความเข้าใจเพียงพอสำหรับดำเนินหน้าที่ของตน ผลงานคือสรุปข้อมูลและคำอธิบายที่ใช้ร่วมกันได้ ต้องจัดลำดับคำขอตามความสำคัญต่อการตัดสินใจ ตกลงระดับรายละเอียดที่จำเป็น และส่งข้อมูลให้ทันเวลา", "defEn": "This character helps people with different responsibilities and technical backgrounds understand and use evidence. They begin with the decisions the information must support, organize the relevant findings, explain limitations, and answer questions in language suited to its users. Their contribution is a usable summary and shared understanding that colleagues can apply in their own work. They prioritize requests according to their importance for a decision and agree on the necessary level of detail. Timely explanation and accessible information help knowledge circulate throughout the team."}, "DΩ": {"th": "ผู้สืบค้น", "en": "The Investigator", "defTh": "ใช้ดุลยพินิจของตนตรวจฐานของข้อสรุปอย่างลึกซึ้ง โดยพิจารณาแหล่งข้อมูล วิธีศึกษา และสมมติฐาน ตามข้ออ้างกลับไปยังต้นทาง ตรวจรายละเอียดที่ขัดกัน และแยกสิ่งที่เชื่อได้จากสิ่งที่ยังต้องระวัง ผลงานคือบันทึกหลักฐานและข้อจำกัดที่ตรวจย้อนกลับได้ ความเป็นอิสระอยู่ที่กระบวนการตรวจเหตุผลภายใต้โจทย์และขอบเขตที่ตกลงร่วมกัน ต้องมีจุดสื่อสารและกำหนดส่งที่ชัด เพื่อให้การค้นคว้าส่งต่อความเข้าใจที่ทีมใช้ได้", "defEn": "This character independently investigates the basis of conclusions through careful examination of sources, methods, and assumptions. They follow claims to original material, inspect conflicting details, and distinguish supported understanding from unresolved uncertainty. Their contribution is a traceable account of the evidence and its limitations. Independence concerns how they examine reasoning within an agreed question and scope. Clear communication points and delivery times keep the inquiry connected to team needs, allowing colleagues to use the findings and understand which conclusions still require further investigation."}, "Dδ": {"th": "ผู้วิเคราะห์", "en": "The Analyst", "defTh": "รับผิดชอบการทำงานวิเคราะห์ให้ตอบคำถามที่ตกลงไว้ภายในเวลาที่มี เลือกข้อมูลจำเป็น ลงมือวิเคราะห์ ตรวจข้อจำกัด และจัดข้อสรุปในรูปแบบที่ใช้ตัดสินใจได้ ความต่อเนื่องแสดงผ่านการทำงานข้อมูลจนได้คำตอบที่ส่งมอบพร้อมใช้ ผลงานคือผลวิเคราะห์ที่มีเหตุผลและขอบเขตการนำไปใช้ชัดเจน ต้องทวนคำถามก่อนเริ่มงานแต่ละชุด รักษาการตรวจคุณภาพที่จำเป็น และแจ้งสิ่งที่ข้อมูลยังตอบไม่ได้", "defEn": "This character delivers analysis answering an agreed question within the time available. They select necessary data, carry out the analysis, examine limitations, and present conclusions in a form that supports a decision. Their contribution is a completed analytical product with reasons and clear boundaries for its use. Responsibility appears through sustained attention to the work and readiness to hand it over. They revisit the question before each analytical task, preserve essential quality checks, and communicate what the available information still cannot establish."}, "Eα": {"th": "ผู้กำกับ", "en": "The Director", "defTh": "รับเจ้าภาพการส่งมอบภารกิจด้วยการตัดสินใจจัดคน เวลา และทรัพยากร ตรวจจุดวิกฤต กำหนดผู้รับผิดชอบ ปรับตาราง และจัดการเหตุขัดข้องที่กระทบความคืบหน้า การนำแสดงผ่านการเลือกสิ่งที่ต้องทำให้พร้อมและรับผิดชอบผลของการจัดสรร ผลงานคือภารกิจที่มีเจ้าภาพชัด พร้อมแนวทางรับมือเมื่อการดำเนินงานเปลี่ยนจากแผน ต้องระบุขอบเขตอำนาจของแต่ละส่วนและใช้จุดรายงานความคืบหน้า", "defEn": "This character takes ownership of delivery by deciding how people, time, and resources will be used. They identify critical bottlenecks, assign owners, adjust schedules, and make decisions when disruptions affect progress. Their contribution is a mission with clear accountability and practical arrangements for handling difficulties. Leadership includes accepting the consequences of resource choices and keeping the work ready to proceed. They define decision authority for each contributor and establish reporting points, allowing the team to act responsibly and sustain delivery within its available capacity."}, "Eβ": {"th": "ผู้จัดแจง", "en": "The Organizer", "defTh": "ช่วยให้ผู้ร่วมทีมดำเนินหน้าที่ได้ด้วยการเตรียมทรัพยากรและดูแลการส่งต่องาน ตรวจว่าแต่ละฝ่ายต้องได้รับข้อมูล เครื่องมือ หรือความช่วยเหลือใดจากกัน แล้วจัดตาราง อุปกรณ์ และช่องทางติดต่อให้พร้อม การสนับสนุนเกิดผ่านการแก้จุดติดขัดที่กระทบการลงมือ ผลงานคือความพร้อมปฏิบัติงานและรอยต่อที่มีเจ้าภาพกับข้อมูลชัดเจน ต้องทำข้อมูลกลางให้เข้าถึงได้ เปิดให้ฝ่ายที่เกี่ยวข้องติดต่อกันโดยตรง และระบุเวลาที่ตนพร้อมช่วย", "defEn": "This character enables colleagues to carry out their responsibilities by preparing resources and keeping handovers clear. They check what each contributor needs, arrange schedules and equipment, maintain contact channels, and address practical delays. Their contribution is operational readiness, with necessary people, information, and tools available at the right time and place. They maintain shared information and help relevant contributors contact one another directly. Clear ownership of handovers and realistic availability for assistance allow coordination to support continuing work and distribute responsibility across the team."}, "EΩ": {"th": "ผู้แก้เกม", "en": "The Troubleshooter", "defTh": "รับปัญหาการดำเนินงานที่มีผลลัพธ์ชัด แล้วเลือกวิธีแก้ด้วยตนเองภายใต้ขอบเขตที่ตกลง ตรวจจุดติดขัด ปรับวิธีทำงาน และส่งมอบทางออกที่ใช้ได้พร้อมคำอธิบายสำหรับผู้รับช่วง ผลงานคือภารกิจที่เดินต่อได้และวิธีแก้ที่ทีมดูแลต่อได้ ความเป็นอิสระอยู่ที่การใช้ดุลยพินิจจัดการโจทย์และรับผิดชอบผลส่งมอบ ต้องบันทึกสิ่งที่เปลี่ยน แจ้งผู้ได้รับผลกระทบ และตกลงจุดส่งต่อ ให้งานดำเนินต่อได้", "defEn": "This character accepts an operational problem with a defined outcome and chooses how to solve it within agreed boundaries. They investigate a blockage, adapt the working method, and deliver a usable solution with instructions for the people taking it forward. Their contribution is restored progress and a solution the team can maintain. Independent judgment includes responsibility for the handover and the effects of changing a method. Recording adjustments, informing affected colleagues, and agreeing communication points keep the practical solution connected to continuing work."}, "Eδ": {"th": "ผู้ปิดงาน", "en": "The Finisher", "defTh": "รักษางานที่รับผิดชอบให้เดินต่อจนผ่านเกณฑ์เสร็จ ติดตามรายการค้าง ตรวจสิ่งที่ยังขาด แจ้งข้อจำกัด และเก็บรายละเอียดสำหรับส่งมอบอย่างต่อเนื่อง ผลงานคืองานที่ปิดครบพร้อมหลักฐานตามข้อตกลง การลงมืออาศัยความสม่ำเสมอและการตรวจว่าทุกส่วนพร้อมให้ผู้รับนำไปใช้ ต้องจัดลำดับงานจำเป็น แยกเรื่องที่เลื่อนได้ ขอความช่วยเหลือเมื่อภาระเกินขอบเขต และปรับวิธีตามเงื่อนไขจริง ส่งต่อภารกิจอย่างชัดเจนให้ทีมดำเนินงานต่อได้", "defEn": "This character keeps agreed work moving until it meets its completion criteria. They track unfinished tasks, check missing requirements, communicate constraints, and steadily complete the details needed for handover. Their contribution is finished work with evidence that delivery commitments have been met. Sustained execution includes checking that each part is ready for the recipient to use. They prioritize essential tasks, identify work that can wait, request assistance when capacity is stretched, and adjust their approach as conditions change so that the mission reaches a dependable conclusion."}, "Bα": {"th": "ผู้ประสานแนวร่วม", "en": "The Negotiator", "defTh": "รับเจ้าภาพการเจรจาเพื่อให้คนหรือกลุ่มหาข้อตกลงที่ทำงานร่วมกันได้ นำฝ่ายที่เกี่ยวข้องเข้าสู่การหารือ ทำให้เข้าใจความต้องการและข้อขัดแย้ง แล้วพากลับสู่เป้าหมายร่วม การนำรวมถึงการระบุว่าแต่ละฝ่ายรับผิดชอบสิ่งใดและยอมรับเงื่อนไขใดได้ ผลงานคือข้อตกลงที่มีผู้รับผิดชอบและได้รับการยอมรับ ต้องตรวจอำนาจตัดสินใจของตนกับข้อจำกัดของทีมก่อนรับปาก พร้อมบันทึกคำมั่นและจุดติดตาม", "defEn": "This character takes ownership of negotiation so people or groups can reach a workable agreement. They bring parties into discussion, clarify needs and disagreements, and guide attention toward a shared goal. Leadership includes establishing what each party can commit to and who will take responsibility. Their contribution is an accepted agreement supporting continued cooperation. They check their decision authority and team constraints before making promises, document commitments, and establish points for follow up. This gives the agreement practical terms and a foundation of trust."}, "Bβ": {"th": "ผู้เชื่อมใจ", "en": "The Mediator", "defTh": "สนับสนุนความร่วมมือด้วยการรับฟัง ดูแลพื้นที่สนทนา และคลี่คลายความเข้าใจผิด ชวนผู้ที่ยังไม่กล้าพูดให้มีส่วนร่วม รับฟังผู้ที่รู้สึกถูกมองข้าม และช่วยให้แต่ละฝ่ายเข้าใจสิ่งที่กำลังกังวล ผลงานคือความไว้วางใจที่ฟื้นและบรรยากาศที่คนแสดงความต้องการได้อย่างปลอดภัย การช่วยเหลือต้องมีขอบเขตและเปิดให้ตนเองบอกความต้องการด้วย เมื่อพบความขัดแย้งที่จำเป็นต้องเผชิญ จะช่วยให้ทีมพูดถึงปัญหาอย่างเคารพและติดตามความเข้าใจ", "defEn": "This character supports cooperation through attentive listening, inclusive conversation, and practical help with misunderstandings. They invite quieter contributors to participate, listen to people who feel overlooked, and help each party understand the concerns involved. Their contribution is renewed trust and a setting where people can express needs safely. Support includes setting realistic boundaries and communicating their own needs. When necessary conflict emerges, they help the team discuss it respectfully and check that understanding has improved, allowing working relationships to sustain continued cooperation."}, "BΩ": {"th": "ผู้รับฟัง", "en": "The Listener", "defTh": "เข้าใจคนผ่านการสนทนาลึกและใช้ดุลยพินิจของตนรับฟังแต่ละเสียง ให้ความสนใจเหตุผล ประสบการณ์ และความต้องการของผู้พูด โดยจัดวิธีพูดคุยให้เหมาะกับคนที่ไม่ถนัดวงใหญ่ ผลงานคือประเด็นจากเสียงที่ไม่เด่นและช่องทางส่งต่อที่เคารพเจ้าของเรื่อง ความเป็นอิสระอยู่ที่การประเมินสิ่งที่รับฟังอย่างเปิดกว้าง พร้อมรักษาความรับผิดชอบต่อความไว้วางใจ ต้องขออนุญาตก่อนส่งต่อข้อมูลสำคัญและตกลงว่าจะนำประเด็นเข้าสู่การตัดสินใจอย่างไร", "defEn": "This character understands people through thoughtful conversations guided by independent judgment. They attend to the reasons, experiences, and needs behind each voice and choose approaches suited to people who find large discussions difficult. Their contribution is insight from less prominent voices and a respectful route for bringing it into the work. Independence includes openness in evaluating what they hear and responsibility for protecting trust. They seek permission to share sensitive concerns and agree how those concerns can enter shared decisions, making personal understanding useful to the team."}, "Bδ": {"th": "ผู้ผูกสัมพันธ์", "en": "The Cultivator", "defTh": "รักษาความสัมพันธ์ผ่านการพบผู้เกี่ยวข้องและติดตามข้อตกลงอย่างต่อเนื่อง ตรวจว่าคำมั่นที่ให้ไว้มีใครรับผิดชอบ และผู้ได้รับผลกระทบได้รับการดำเนินการหรือคำตอบตามที่ตกลงหรือยัง ผลงานคือความไว้วางใจที่มีการรักษาคำพูดและความคืบหน้ารองรับ ตรวจความเข้าใจ นัดติดตาม และประสานเรื่องค้าง ต้องจัดลำดับความเร่งด่วน ระบุสิ่งที่ทำได้กับเรื่องที่ต้องส่งต่อ และแจ้งข้อจำกัดอย่างตรงไปตรงมา", "defEn": "This character sustains relationships through dependable contact and continued attention to agreements. They meet the people involved, check who owns each commitment, and follow up on whether affected parties receive the action or response they were promised. Their contribution is trust supported by kept commitments and visible progress. Practical responsibility includes checking shared understanding, arranging follow up, and coordinating unresolved matters. They prioritize urgency, explain what they can deliver, and refer issues when necessary, so the people involved receive appropriate attention and cooperation can continue."}, "Sα": {"th": "ผู้ริเริ่ม", "en": "The Initiator", "defTh": "รับเจ้าภาพการสร้างและเลือกแนวทางใหม่ ตั้งโจทย์ออกแบบ นำทีมพิจารณาแนวคิด และรับผิดชอบว่าจะพัฒนาวิธีแก้ใดต่อ อธิบายเหตุผล เกณฑ์เลือก และความต้องการที่ต้องตอบ พร้อมให้ทีมตรวจสมมติฐานและทักท้วง\n\nผลงานคือโจทย์ออกแบบ แนวคิดที่เลือก และสมมติฐานสำหรับต้นแบบ ระบุสิ่งที่รู้ สิ่งที่คาดหวัง และคำถามทดสอบให้ชัด สื่อสารความไม่แน่นอน เพื่อให้ทีมเริ่มพัฒนาทางออกที่มีจุดหมายร่วมและตรวจเหตุผลของการเลือกได้", "defEn": "This character takes ownership of creating and selecting new approaches. They frame the design problem, guide the team through proposed ideas, and accept responsibility for choosing what to develop. They explain the selection criteria and the needs the chosen concept must address.\n\nTheir contribution is a clear design brief, a selected concept, and explicit assumptions for a prototype. They invite objections, separate evidence from expectations, and identify what needs testing. This keeps the creative effort connected to a shared purpose and makes the reasoning behind the choice available for examination."}, "Sβ": {"th": "ผู้ต่อยอด", "en": "The Synthesizer", "defTh": "พัฒนาวิธีแก้ใหม่โดยช่วยให้คนอื่นต่อยอดความคิดกัน เปิดให้ผู้มีประสบการณ์หลากหลายร่วมออกแบบ เชื่อมข้อเสนอที่เสริมกัน และช่วยให้สมาชิกเข้าใจว่าความคิดของตนมีส่วนต่อทางออกอย่างไร\n\nผลงานคือทางออกที่ร่วมพัฒนาและมีเหตุผลของการเลือก ใช้เกณฑ์คัดเลือกร่วม สรุปสิ่งที่ควรพัฒนาต่อ และเก็บข้อเสนอสำรองให้กลับมาใช้ได้ รับผิดชอบการพาความคิดร่วมไปถึงแนวทางที่ลงมือพัฒนาได้ พร้อมรักษาการมีส่วนร่วมของผู้ช่วยสร้างแนวคิด", "defEn": "This character develops new solutions by helping people build on one another’s ideas. They bring varied experiences into the design process, connect useful suggestions, and create room for contributors to shape an approach together. They help participants understand how their contributions support the emerging solution.\n\nTheir contribution is a jointly developed approach with shared reasons for selecting it. They use agreed criteria, clarify what should be developed next, and preserve useful suggestions for future consideration. Their support helps collective creativity reach a coherent direction that the team can continue developing."}, "SΩ": {"th": "ผู้คิดต่าง", "en": "The Maverick", "defTh": "สร้างคำถามและทางเลือกใหม่ด้วยดุลยพินิจของตน ตรวจสมมติฐานและข้อจำกัด แล้วเลือกวิธีคิดภายใต้ข้อตกลงร่วม นำแนวคิดหรือภาพร่างมาอธิบายว่ากำลังแก้ปัญหาอะไร พร้อมเหตุผลที่ผู้อื่นตรวจได้\n\nผลงานคือแนวคิดที่มีเป้าหมาย สมมติฐาน และเหตุผลชัด รับฟังคำถามเรื่องความเหมาะสมและประโยชน์ พร้อมปรับคำอธิบายให้ผู้ใช้เข้าใจ รับผิดชอบการทำให้ความคิดอิสระนำไปสู่ทางเลือกที่ตอบโจทย์จริงและส่งต่อให้ทีมพัฒนาต่อได้", "defEn": "This character creates new questions and alternatives through independent judgment. They examine assumptions, explore the problem through a chosen thinking process, and work within agreed boundaries. They bring a concept or sketch back to the team with an explanation of the problem it addresses and the reasoning supporting it.\n\nTheir contribution is an original approach with explicit assumptions and a clear purpose. They welcome questions about relevance and usefulness, refine their explanation, and make the idea understandable to its intended users. Their responsibility includes producing an alternative that others can examine and develop."}, "Sδ": {"th": "ผู้ทดลอง", "en": "The Experimenter", "defTh": "พัฒนาวิธีแก้โดยสร้างและทดสอบต้นแบบ กำหนดคำถามที่จะเรียนรู้ เลือกสิ่งที่เล็กพอให้ปรับได้ และลงมือดูว่าตอบปัญหาผู้ใช้หรือไม่ ใช้สิ่งที่พบแก้แนวคิดและวางการทดลองรอบต่อไป\n\nผลงานคือต้นแบบพร้อมข้อค้นพบสำหรับตัดสินใจพัฒนา รับผิดชอบการทดลองต่อเนื่อง บันทึกสมมติฐาน ผลสังเกต และข้อจำกัด พร้อมเปลี่ยนหรือหยุดเมื่อจำเป็น การลงมือเป็นกระบวนการเรียนรู้ที่เชื่อมความคิดกับความต้องการและการใช้งานจริง", "defEn": "This character develops solutions by building and testing prototypes. They define a learning question, choose a manageable form for the prototype, and examine whether it addresses user needs. They use observations from practical testing to revise the concept and plan the next round of work.\n\nTheir contribution is a tangible prototype accompanied by findings that support design decisions. They sustain the testing process, record assumptions and limitations, and change or stop an approach when necessary. Their responsibility is to turn practical experimentation into useful learning that guides the development of the solution."}, "Qα": {"th": "ผู้พิทักษ์", "en": "The Guardian", "defTh": "รับผิดชอบคำตัดสินด้านคุณภาพ ทำเกณฑ์ยอมรับงานให้ชัด ระบุความเสี่ยง และนำการพิจารณาว่างานพร้อมใช้หรือยัง ทักท้วงข้ออ้างที่ไม่มีฐาน พร้อมอธิบายหลักฐาน เกณฑ์ และผลกระทบที่ใช้ตัดสิน\n\nผลงานคือคำตัดสินความพร้อมที่ตรวจเหตุผลได้ พร้อมข้อแก้ไขสำคัญ เปิดให้ทีมตรวจเกณฑ์และข้อทักท้วง ปรับความเข้มตามบริบทและผลกระทบ และระบุเจ้าภาพแก้ไข รับผิดชอบการทำให้มาตรฐานนำไปสู่คำตัดสินที่มีเจ้าภาพและติดตามต่อได้", "defEn": "This character takes responsibility for quality decisions. They make acceptance criteria explicit, identify risks requiring action, and lead the judgment about whether work is ready for use. They challenge unsupported claims and explain the evidence, standards, and consequences informing their assessment.\n\nTheir contribution is a readiness decision with traceable reasons and essential corrections. They invite examination of their criteria, adjust scrutiny to the context and impact, and clarify who must address the remaining issues. Their responsibility is to make quality standards usable in decisions that have clear ownership and arrangements for further action."}, "Qβ": {"th": "ผู้ทบทวน", "en": "The Reviewer", "defTh": "ช่วยให้เพื่อนร่วมทีมปรับงานด้วยข้อเสนอแนะเฉพาะเจาะจงและเคารพผู้ทำงาน ทบทวนกับเจ้าของ อธิบายเกณฑ์ที่ยังไม่ผ่านและผลกระทบ แล้วช่วยหาวิธีแก้ที่ทำได้ เปิดให้เจ้าของงานถามและเข้าใจเหตุผล\n\nผลงานคือข้อเสนอแนะที่ใช้แก้ได้และการเรียนรู้ร่วมเรื่องคุณภาพ สื่อสารความสำคัญและความเร่งด่วนให้ตรง พร้อมรักษาน้ำเสียงที่คุยต่อได้ รับผิดชอบการช่วยให้เจ้าของงานเข้าใจปัญหา ตัดสินใจแก้ไข และพัฒนาต่อด้วยตนเองตามเกณฑ์ร่วม", "defEn": "This character helps colleagues improve work through specific, respectful feedback. They review material with its owner, explain which criteria need attention, and discuss feasible corrections. They make room for questions so the person responsible can understand the reasons for improvement and act on them.\n\nTheir contribution is actionable feedback and shared learning about quality. They state the importance and urgency of errors clearly, maintain a constructive conversation, and support the owner in carrying corrections forward. Their responsibility is to make the review useful, understandable, and connected to the agreed standards for the work."}, "QΩ": {"th": "ผู้ตรวจสอบ", "en": "The Auditor", "defTh": "ตรวจงานด้วยดุลยพินิจอิสระ พิจารณาเหตุผล เกณฑ์ และเส้นทางหลักฐานสู่ข้อสรุป ตรวจข้ออ้างภายใต้ขอบเขตที่ตกลง ระบุข้อกังวลพร้อมหลักฐานที่ตรวจย้อนกลับได้ และอธิบายความสำคัญกับผลกระทบให้ผู้เกี่ยวข้องพิจารณา\n\nผลงานคือบันทึกตรวจสอบที่เชื่อมข้อบกพร่องกับหลักฐานและเหตุผล ส่งข้อกังวลให้ทันตัดสินใจ เสนอแนวแก้ และเปิดให้ตรวจเหตุผลของตน รับผิดชอบการทำให้ข้อค้นพบชัดและใช้ได้ ด้วยการสื่อสารกระชับ รับข้อทักท้วง และส่งต่อข้อมูลตามข้อตกลง", "defEn": "This character examines work through independent judgment. They check reasoning, requirements, and the path from evidence to conclusions within an agreed remit. They document concerns with traceable evidence and explain the importance and likely consequences of the issues they identify.\n\nTheir contribution is an independent review that connects deficiencies to explicit reasons and supporting material. They communicate concerns in time for decisions, suggest feasible corrections, and allow their own reasoning to be examined. Their responsibility includes making scrutiny clear and usable through concise communication, openness to objections, and agreed arrangements for sharing the findings."}, "Qδ": {"th": "ผู้ขัดเกลา", "en": "The Optimizer", "defTh": "ปรับคุณภาพโดยแก้งานจริงและติดตามต่อเนื่อง ตรวจว่ากระบวนการสร้างข้อผิดพลาดตรงไหน แยกอาการจากสาเหตุ แล้วปรับขั้นตอนที่เกี่ยวข้อง กำหนดสิ่งที่จะสังเกตหลังแก้เพื่อดูว่าปัญหาเดิมเกิดซ้ำหรือไม่\n\nผลงานคือการแก้สาเหตุพร้อมหลักฐานติดตามการเกิดซ้ำ บันทึกสิ่งที่เปลี่ยน ผลที่เกิด และประเด็นที่ต้องปรับ ใช้ข้อมูลการทำงานจริงตรวจผลตามเกณฑ์คุณภาพ รับผิดชอบการดูแลต่อเนื่องจนกระบวนการที่ปรับสามารถนำไปใช้และตรวจผลได้", "defEn": "This character improves quality through practical correction and persistent monitoring. They trace an error to the process that produced it, distinguish symptoms from causes, and change the relevant steps. They identify what to observe after the correction to assess whether the problem recurs.\n\nTheir contribution is an improvement targeting the cause, supported by evidence from continued observation. They record the changes, examine the results, and address issues that remain. Their responsibility is to use actual work experience to assess progress against quality criteria and sustain the improvement until the revised process can be used and monitored."}, "Aα": {"th": "ผู้วางรากฐาน", "en": "The Transformer", "defTh": "รับเจ้าภาพเปลี่ยนโครงสร้างงาน พิจารณาว่าหน้าที่ อำนาจตัดสินใจ กระบวนการ และข้อมูลควรเชื่อมอย่างไร นำผู้เกี่ยวข้องตกลงระบบและระบุเจ้าภาพแต่ละส่วน รับผิดชอบคำตัดสินเรื่องทิศทางและช่วงเปลี่ยนผ่าน\n\nผลงานคือโครงสร้างความรับผิดชอบและวงจรข้อมูลที่ตกลงใช้ร่วมกัน ตรวจความพร้อมผู้ใช้ ทดลองส่วนสำคัญ และเตรียมส่งต่อให้งานต่อเนื่อง รับผิดชอบการทำให้โครงสร้างมีเหตุผล มีอำนาจดูแลตามหน้าที่ และมีกระบวนการที่ดำเนินร่วมกันได้ต่อไป", "defEn": "This character takes ownership of structural change. They consider how responsibilities, decision authority, procedures, and information should connect, then lead agreement on the system people will use. They make ownership explicit and accept responsibility for decisions about the transition.\n\nTheir contribution is a responsibility structure and information cycle that participants agree to use. They examine readiness, try important parts with users, and arrange handovers that protect ongoing work. Their responsibility is to give the proposed structure a clear rationale, appropriate authority, and practical arrangements supporting connected work over time."}, "Aβ": {"th": "ผู้ประสานโครงข่าย", "en": "The Integrator", "defTh": "ออกแบบระบบจากประสบการณ์ผู้ใช้และผู้ส่งต่องาน รับฟังความต้องการ ภาระ และข้อจำกัด แล้วชวนร่วมกำหนดหน้าที่ ขั้นตอน จุดส่งต่อ และข้อมูลย้อนกลับ ช่วยให้แต่ละฝ่ายเข้าใจว่าระบบรองรับงานและเชื่อมกับผู้เกี่ยวข้องอย่างไร\n\nผลงานคือกระบวนการที่ผู้ใช้ร่วมออกแบบพร้อมบทบาทและรอยต่อที่ใช้ได้ เลือกส่วนจำเป็น ตรวจภาระ และปรับข้อกำหนดให้ตอบปัญหาหลัก รับผิดชอบการช่วยให้คนใช้ระบบร่วมกันต่อได้ ด้วยข้อมูลและการส่งต่องานที่ชัดเจน", "defEn": "This character designs systems around the people who use them and pass work between functions. They listen to needs, workloads, and constraints, then involve users in shaping responsibilities, procedures, handovers, and feedback. They help participants understand how the arrangements support their work.\n\nTheir contribution is a jointly designed process with clear roles and usable connections. They select essential procedures, examine the burden on users, and adjust requirements around the main problem. Their responsibility is to help people continue using the system together through understandable information and dependable arrangements for handing work on."}, "AΩ": {"th": "ผู้รื้อสร้าง", "en": "The Reformer", "defTh": "วิเคราะห์โครงสร้างเบื้องหลังปัญหาซ้ำด้วยดุลยพินิจอิสระ ตั้งคำถามกับกติกาและหน้าที่ ตรวจจุดที่ข้อมูลหายหรือการตัดสินใจค้าง แล้วออกแบบระบบทางเลือก อธิบายเหตุผลและสมมติฐานให้ทีมตรวจได้\n\nผลงานคือแผนผังทางเลือกที่มีสมมติฐานตรวจสอบได้ เชื่อมข้อเสนอกับกรณีใช้งาน ตกลงจุดส่งต่อ และให้ผู้ใช้ลองเดินตามกระบวนการ รับผิดชอบการใช้ข้อมูลทบทวนโครงสร้าง เพื่อให้ข้อเสนอพร้อมให้ผู้อื่นพิจารณา ทดลอง และพัฒนาต่อ", "defEn": "This character independently examines the structures behind recurring problems. They question rules and responsibilities, trace where information disappears or decisions stall, and design an alternative arrangement. They explain the reasoning and assumptions so the team can examine how the proposed mechanism addresses the problem.\n\nTheir contribution is a system map with testable assumptions and a clear practical purpose. They connect the proposal to actual use cases, agree on handovers, and invite users to walk through the process. Their responsibility is to turn independent structural thinking into a proposal that can be examined, tried, and developed."}, "Aδ": {"th": "ผู้วางระบบ", "en": "The Systematizer", "defTh": "ทำแบบระบบให้เป็นขั้นตอน เครื่องมือ และการส่งต่องานที่ใช้ได้จริง ลงมือสร้างวิธีปฏิบัติ จัดจุดติดตามและข้อมูลย้อนกลับ แล้วให้ผู้เกี่ยวข้องลองกับงาน รับผิดชอบการใช้งานต่อเนื่องและระบุเจ้าภาพดูแลระยะต่อไป\n\nผลงานคือกระบวนการและเครื่องมือพร้อมผู้รับผิดชอบ ติดตามว่าผู้ใช้ดำเนินระบบต่อได้หรือไม่ ตรวจประโยชน์และภาระ แล้วปรับหรือตัดขั้นตอนที่ไม่ช่วยเป้าหมาย รับผิดชอบการดูแลผลจากงานจริงและเตรียมวิธีปฏิบัติที่ส่งต่อให้ผู้ใช้ระบบได้", "defEn": "This character turns a system design into procedures, tools, and handovers that people can use. They build working arrangements, establish feedback points, and try the process with actual tasks. They sustain implementation and make responsibility for continued operation explicit.\n\nTheir contribution is a usable process with supporting tools and a designated owner. They follow up on whether users can continue operating it, examine the benefits and burden of each step, and simplify arrangements when needed. Their responsibility includes attending to actual results and preparing practical methods that can be handed on."}, "Pα": {"th": "ผู้บุกเบิก", "en": "The Pioneer", "defTh": "รับเจ้าภาพเปิดทางให้แนวทางใหม่เริ่มขึ้น มองเห็นโอกาสที่ยังไม่มีผู้รับผิดชอบ เสนอทิศทาง ชวนผู้สนใจรวมตัว และรับผิดชอบการลงมือครั้งแรก เชื่อมความเป็นไปได้กับคนและเงื่อนไข พร้อมทำให้ผู้ร่วมเริ่มเห็นเป้าหมายร่วม\n\nผลงานคือทิศทางบุกเบิกและทีมเริ่มต้นที่เข้าใจความเสี่ยง ระบุสิ่งที่ยังไม่แน่นอน รับข้อทักท้วงจากผู้ได้รับผลกระทบ และร่วมกำหนดวิธีเริ่มตามบริบท รับผิดชอบการพาความสนใจถึงจุดเริ่มที่มีเจ้าภาพและเงื่อนไขพอให้ลองดำเนินการได้", "defEn": "This character takes ownership of opening a path for change. They identify an opportunity lacking a clear owner, propose a direction, gather interested people, and accept responsibility for the first move. They connect the emerging possibility with collaborators and the conditions needed to begin.\n\nTheir contribution is a pioneering direction and an initial team that understands the risks. They explain uncertainties, invite affected people to raise concerns, and shape an appropriate starting arrangement. Their responsibility is to turn interest into a concrete beginning with participants who understand their commitments and the conditions of the attempt."}, "Pβ": {"th": "ผู้จุดกระแส", "en": "The Catalyst", "defTh": "ช่วยให้แนวทางใหม่เริ่มได้โดยเชื่อมความสนใจและทรัพยากรหลายกลุ่ม สำรวจว่าแต่ละฝ่ายช่วยอะไร ทำให้เห็นโอกาสร่วม และเปิดให้ลงมือผ่านบทบาทเหมาะสม ประสานสิ่งสนับสนุนและช่วยให้ผู้ร่วมงานเข้าใจส่วนที่ตนรับผิดชอบ\n\nผลงานคือแนวร่วมเริ่มต้นพร้อมงาน เจ้าภาพ และข้อตกลง เปลี่ยนความสนใจเป็นภารกิจเล็กที่มีเวลาและผลส่งมอบ ติดตามให้ผู้เกี่ยวข้องลงมือและเชื่อมต่อกัน รับผิดชอบการทำให้มีผู้รับช่วงและเดินต่อได้ โดยกระจายภาระไปยังผู้ร่วมเริ่ม", "defEn": "This character helps a new approach begin by connecting the interests and resources of several groups. They identify what each participant can contribute, make a shared opportunity understandable, and enable people to join through suitable responsibilities. They coordinate the support needed for an initial collective effort.\n\nTheir contribution is a starting coalition with agreed tasks, owners, and commitments. They turn interest into small actions with clear timing and outputs, then help participants stay connected. Their responsibility is to make the beginning workable through distributed participation and arrangements that allow others to take the work forward."}, "PΩ": {"th": "ผู้สำรวจ", "en": "The Explorer", "defTh": "สำรวจโอกาสเริ่มต้นด้วยดุลยพินิจอิสระในบริบทที่ยังไม่มีทางชัด ตรวจผู้ร่วมเริ่ม อำนาจ ทรัพยากร ความพร้อม และข้อจำกัด เลือกวิธีสำรวจภายใต้ข้อตกลงส่งต่อข้อมูล แล้วเสนอเงื่อนไขที่ทำให้แนวทางหนึ่งเริ่มลองได้\n\nผลงานคือโอกาสที่เชื่อมกับผู้เกี่ยวข้องจริงและเงื่อนไขเริ่มต้น กำหนดขอบเขตค้นหา เกณฑ์เลือก และข้อมูลที่ทีมต้องใช้ อธิบายสมมติฐานกับสิ่งที่ยังต้องตรวจ รับผิดชอบการพัฒนาสิ่งที่พบเป็นข้อเสนอว่าโอกาสใดควรเดินต่อและต้องเตรียมอะไร", "defEn": "This character independently explores whether an emerging opportunity can begin in a setting with no established path. They examine potential collaborators, authority, resources, readiness, and constraints. They choose their exploration method within agreed arrangements for sharing information, then identify conditions that could support a first attempt.\n\nTheir contribution is an opportunity linked to actual participants and explicit starting conditions. They define search boundaries and selection criteria, explain assumptions, and identify remaining questions. Their responsibility is to turn the exploration into a usable proposal about which opportunity deserves further development and what beginning it would require."}, "Pδ": {"th": "ผู้ลงสนาม", "en": "The Pathfinder", "defTh": "เริ่มใช้แนวทางใหม่กับผู้เกี่ยวข้องกลุ่มแรก ลงมือขนาดที่ติดตามได้เพื่อดูว่าเงื่อนไขใดช่วยให้เริ่ม ใครพร้อมรับผิดชอบ และส่งต่องานอย่างไร รับผิดชอบการทำให้เกิดการลองร่วมกันและบันทึกสิ่งที่เกิดในบริบทจริง\n\nผลงานคือการเริ่มใช้พร้อมเงื่อนไขดำเนินต่อ กำหนดสมมติฐาน สิ่งสังเกต และเกณฑ์หยุดหรือเดินต่อก่อนแต่ละรอบ ติดตามความพร้อมผู้รับช่วงและการจัดการที่จำเป็น รับผิดชอบการได้จุดเริ่มที่จับต้องได้และข้อมูลสำหรับตัดสินใจส่งต่อหรือปรับการเริ่มต้น", "defEn": "This character opens a path by starting a new approach with its first participants. They carry out a manageable shared attempt to learn which conditions support initial use, who can take responsibility, and how the effort can be handed on. They record what happens in the actual setting.\n\nTheir contribution is a concrete beginning with clear continuation conditions. They define assumptions, observations, and criteria for stopping or proceeding before each round. Their responsibility includes following the readiness of those taking over and gathering useful information for decisions about sustaining or adjusting the initial effort."}, "Wα": {"th": "ผู้ผสานกำลัง", "en": "The Orchestrator", "defTh": "รับเจ้าภาพภาพรวมและเชื่อมหลายหน้าที่สู่เป้าหมายเดียว มองว่าข้อมูล การออกแบบ การประสาน และการลงมือต้องเชื่อมตรงไหน พร้อมสลับบทบาทตนตามสถานการณ์ รับผิดชอบการตัดสินใจภาพรวมและทำให้แต่ละส่วนเห็นทิศทางร่วม\n\nผลงานคือการทำงานหลายบทบาทที่ประสานกันภายใต้เป้าหมายชัด กำหนดจุดตัดสินใจ จุดส่งต่อ และเจ้าภาพ พร้อมให้ผู้เชี่ยวชาญนำเรื่องที่รู้ลึก รับผิดชอบการรักษาความเชื่อมโยงของงานทั้งชุดและใช้ความยืดหยุ่นช่วยให้รอยต่อสำคัญเดินต่อได้", "defEn": "This character takes ownership of the whole effort and connects several functions toward a common goal. They notice where evidence, design, coordination, and execution must meet, then shift their own contribution as needed. They accept responsibility for overall decisions and make the direction of the work clear.\n\nTheir contribution is coordinated action across roles with explicit handovers and owners. They clarify decision points and give relevant specialists room to lead their areas. Their responsibility is to maintain connections throughout the effort and use their flexibility to keep important links between tasks working."}, "Wβ": {"th": "ผู้เติมเต็ม", "en": "The Enabler", "defTh": "มองช่องว่างระหว่างหน้าที่แล้วช่วยให้คนอื่นทำงานต่อ อาจสรุปข้อมูล ประสานจุดส่งต่อ หรือเตรียมทรัพยากรตามความต้องการที่เปลี่ยน เลือกสลับบทบาทของตนตามสิ่งที่ทีมขาดและวิธีช่วยให้งานเชื่อมกันต่อได้\n\nผลงานคือช่องว่างที่เติมเต็มพร้อมขอบเขตและจุดส่งต่อ บอกว่าช่วยอะไร ต้องใช้ข้อมูลใด และจะส่งคืนหน้าที่เมื่อใด จัดลำดับภาระและแจ้งข้อจำกัด รับผิดชอบการสนับสนุนหลายด้านให้ต่อเนื่อง เชื่อถือได้ และเหมาะกับกำลังที่ดูแลได้", "defEn": "This character notices gaps between functions and steps in to help others continue their work. They may summarize evidence, coordinate a handover, or prepare resources as needs change. They shift their own role purposefully, guided by what the team currently lacks and what will reconnect the work.\n\nTheir contribution is a filled gap with a clear boundary and handover. They explain what their help covers, identify information they need, and agree when responsibility returns to its owner. Their responsibility includes prioritizing commitments and communicating limits so their support remains dependable and manageable."}, "WΩ": {"th": "ผู้เชื่อมโยง", "en": "The Connector", "defTh": "ใช้ดุลยพินิจอิสระเชื่อมความรู้และหน้าที่รอบโจทย์หนึ่ง สำรวจมุมมองที่เกี่ยวข้อง เลือกสิ่งที่จะใช้ และอธิบายความเชื่อมโยงด้วยเหตุผลของตน ทำงานข้ามหน้าที่ภายใต้ข้อตกลงสื่อสารและส่งต่อ เพื่อให้ผู้เกี่ยวข้องนำสิ่งที่เชื่อมไปใช้ร่วมกัน\n\nผลงานคือกรอบความเข้าใจหรือเครื่องมือเชื่อมความรู้ข้ามหน้าที่เพื่อตอบโจทย์ เลือกคำถามแกน กำหนดผลส่งมอบจับต้องได้ และพัฒนาให้ลึกพอใช้งาน รับผิดชอบการเปิดให้ตรวจเหตุผลและเตรียมผลงานที่ทีมเข้าใจและพัฒนาต่อได้", "defEn": "This character uses independent judgment to connect knowledge and functions around a particular problem. They explore relevant perspectives, choose what to bring together, and explain the resulting connections through their own reasoning. They work across functional boundaries with agreed arrangements for communication and sharing.\n\nTheir contribution is a framework or tool that joins knowledge across functions for a clear purpose. They select a central question, define a concrete output, and develop the connections sufficiently for use. Their responsibility includes making their reasoning open to examination and preparing work that others can understand and continue."}, "Wδ": {"th": "ผู้ชำนาญรอบด้าน", "en": "The All-Rounder", "defTh": "ทำให้ภารกิจเดินต่อโดยลงมือหลายประเภทตามความต้องการที่เปลี่ยน อาจดูแลข้อมูล ตาราง และการประสานในทีม พร้อมติดตามว่าแต่ละส่วนประกอบกันอย่างไร รับผิดชอบการทำงานต่อเนื่องและส่งส่วนงานที่เชื่อมกันให้ครบตามเกณฑ์\n\nผลงานคืองานหลายส่วนที่ประสานและส่งมอบร่วมกัน จัดเวลาทำงานให้มีสมาธิ ระบุสิ่งที่ต้องใช้ผู้เชี่ยวชาญ และจำกัดหน้าที่พร้อมกัน ติดตามรายละเอียดและแจ้งข้อจำกัดแต่เนิ่น ๆ รับผิดชอบการใช้ความยืดหยุ่นรักษางานให้ต่อเนื่องและดูแลภาระที่ตนรับอยู่", "defEn": "This character keeps an assignment moving by carrying out several kinds of work as needs change. They may handle basic information, schedules, and coordination within the same team, tracking how those pieces fit together. They sustain practical action and complete the connected parts they have accepted.\n\nTheir contribution is a set of coordinated outputs delivered together. They protect focused work periods, identify tasks requiring specialist input, and limit simultaneous responsibilities. Their responsibility is to use flexible execution to maintain continuity, attend to important details, and communicate constraints early enough for the team to respond."}};
+const IDEAS = {
+ A:["Give teens points for healthy activities","ให้แต้มวัยรุ่นเมื่อทำกิจกรรมสุขภาพ"],
+ B:["Test students often and offer counselling","ตรวจนักเรียนเป็นระยะและให้คำปรึกษา"],
+ C:["Give a badge to schools that join a government control programme and meet its rules","ให้ตรารับรองโรงเรียนที่เข้าร่วมโครงการควบคุมกับรัฐบาล และทำตามกฎเกณฑ์เงื่อนไขที่กำหนด"],
+ D:["Build an app to get help to quit vaping and report illegal sellers","พัฒนาแอปที่สามารถใช้ขอความช่วยเหลือเลิกบุหรี่ไฟฟ้า และแจ้งผู้ขายผิดกฎหมายได้"],
+ E:["Limit online sales and ads, by age group","จำกัดการขายและโฆษณาออนไลน์ แยกตามช่วงวัย"],
+ F:["A public exhibition on vaping harms that also teaches young people","นิทรรศการสาธารณะเรื่องพิษภัยบุหรี่ไฟฟ้า และให้ความรู้กับเยาวชน"],
+ G:["AI alerts, checked by teachers, to find vaping early","AI แจ้งเตือนโดยมีครูตรวจสอบ เพื่อพบการสูบตั้งแต่เนิ่น ๆ"],
+ H:["Strict school rules, with psychologists, rewards for reporting, and school places tied to parents quitting","กฎโรงเรียนที่เข้มงวด มีนักจิตวิทยาดูแล ให้รางวัลกับผู้แจ้งเหตุ และผูกสิทธิเข้าเรียนกับการเลิกสูบของผู้ปกครอง"]};
+const DIMS = [
+ ["Clarity","How well do you understand how this idea would work?","คุณเข้าใจว่าแนวคิดนี้จะทำงานอย่างไรได้ดีแค่ไหน"],
+ ["Policy relevance","How much do you think local leaders care about this issue?","คุณคิดว่าผู้บริหารในท้องถิ่นให้ความสำคัญกับเรื่องนี้แค่ไหน"],
+ ["Usefulness","How much do you think this idea would help reduce teen vaping?","คุณคิดว่าแนวคิดนี้จะช่วยลดการสูบบุหรี่ไฟฟ้าของวัยรุ่นได้แค่ไหน"],
+ ["Meaningful engagement","How much do you think young people would want to take part in this idea?","คุณคิดว่าเยาวชนจะอยากมีส่วนร่วมในแนวคิดนี้แค่ไหน"],
+ ["Practical feasibility","With up to 5,000 USD, how easy do you think this is to do?","ด้วยงบไม่เกิน 5,000 USD คุณคิดว่าแนวคิดนี้ทำได้ง่ายแค่ไหน"],
+ ["Transferability","How likely do you think this would succeed in your community?","คุณคิดว่าแนวคิดนี้จะประสบความสำเร็จในชุมชนของคุณแค่ไหน"],
+ ["Policy connectivity","How easily do you think this idea could link to existing services?","คุณคิดว่าแนวคิดนี้เชื่อมกับบริการที่มีอยู่แล้วได้ง่ายแค่ไหน"]];
+const AGREE5 = [["Strongly disagree","ไม่เห็นด้วยอย่างยิ่ง"],["Disagree","ไม่เห็นด้วย"],["Neutral","เฉย ๆ"],["Agree","เห็นด้วย"],["Strongly agree","เห็นด้วยอย่างยิ่ง"]];
+const SCALE5 = [["Not at all","ไม่เลย"],["A little","เล็กน้อย"],["Somewhat","ปานกลาง"],["Very","มาก"],["Extremely","มากที่สุด"]];
+const PITCH = {
+ A:["Ploy, your community officer","พลอย เจ้าหน้าที่ชุมชนของคุณ","“Teens have nowhere to go after school. Let's open an activity centre with family talks, art and climbing. Each visit earns points for discounts.”","“วัยรุ่นไม่มีที่ไปหลังเลิกเรียน เราเปิดศูนย์กิจกรรมกันเถอะ มีวงคุยครอบครัว ศิลปะ และปีนผา มาแต่ละครั้งได้แต้มไปแลกส่วนลด”"],
+ B:["Jordan, a school nurse","จอร์แดน พยาบาลประจำโรงเรียน","“We only find out when students get caught. Let's test students every three months. Trained teachers talk with those who test positive, and the hospital helps.”","“เรารู้ก็ตอนนักเรียนถูกจับได้ ลองตรวจนักเรียนทุกสามเดือนดีไหม ครูที่ผ่านการฝึกจะคุยกับคนที่ผลเป็นบวก และโรงพยาบาลช่วยดูแลต่อ”"],
+ C:["Aisha, a former teacher","ไอชา อดีตครู","“Schools need a reason to take vaping seriously. Let's give a badge to schools that join our government programme. They must meet its rules, like parent workshops and regular checks.”","“โรงเรียนต้องมีเหตุผลที่จะจริงจังกับเรื่องบุหรี่ไฟฟ้า เราให้ตรารับรองโรงเรียนที่เข้าร่วมโครงการของรัฐและทำตามเงื่อนไข เช่น จัดเวิร์กช็อปผู้ปกครองและตรวจติดตามเป็นระยะ”"],
+ D:["Leo, your digital officer","ลีโอ เจ้าหน้าที่ดิจิทัลของคุณ","“People don't know where to get help to quit. One app could offer a quit plan, a chatbot and clinic booking. It could also report illegal sellers.”","“คนไม่รู้ว่าจะขอความช่วยเหลือเลิกได้ที่ไหน แอปเดียวอาจมีแผนเลิก แชตบอต และจองคลินิก แถมแจ้งผู้ขายผิดกฎหมายได้ด้วย”"],
+ E:["Nina, your policy adviser","นีน่า ที่ปรึกษานโยบายของคุณ","“Teens can buy vapes online in minutes. Let's limit online ads and sales, with different rules by age. Platforms could use AI to block sales.”","“วัยรุ่นซื้อบุหรี่ไฟฟ้าออนไลน์ได้ในไม่กี่นาที เราจำกัดโฆษณาและการขายออนไลน์ โดยมีกติกาต่างกันตามช่วงวัย และให้แพลตฟอร์มใช้ AI บล็อกการขาย”"],
+ F:["Omar, your communications lead","โอมาร์ หัวหน้าฝ่ายสื่อสารของคุณ","“Campaigns get attention, but people don't follow up. Let's hold an exhibition with five rooms: health harms, who profits, the law, taking action and ways to quit. At the exit, visitors save our quit line number.”","“แคมเปญเรียกความสนใจได้ แต่คนไม่ไปต่อ เราจัดนิทรรศการห้าห้องกันเถอะ ได้แก่ พิษภัยต่อสุขภาพ ใครได้ประโยชน์ กฎหมาย การลงมือทำ และวิธีเลิก ตอนออกจากงานให้ผู้ชมบันทึกเบอร์สายด่วนเลิกบุหรี่”"],
+ G:["Priya, from IT","ปรียา จากฝ่ายไอที","“We find out about vaping too late. AI cameras could spot it in schools. A teacher checks every alert, and parents get updates.”","“เรารู้เรื่องการสูบช้าเกินไป กล้อง AI ช่วยจับได้ในโรงเรียน ครูตรวจทุกการแจ้งเตือน และผู้ปกครองได้รับข้อมูล”"],
+ H:["Ken, a deputy principal","เคน รองผู้อำนวยการโรงเรียน","“Soft rules don't work. Let's put a psychologist in every school and reward students who report vaping. A child's school place depends on vaping parents quitting.”","“กฎที่อ่อนไม่ได้ผล ให้ทุกโรงเรียนมีนักจิตวิทยา และให้รางวัลนักเรียนที่แจ้งการสูบ สิทธิเข้าเรียนของเด็กขึ้นกับการที่ผู้ปกครองที่สูบเลิกได้”"]};
+const NPITCH = 4, NSUB = 3; // NSUB opinion items per pitch, plus one overall-agreement item
+const REASONS = [
+ ["Policy relevance","Leaders already care about it","ผู้บริหารให้ความสำคัญอยู่แล้ว"],
+ ["Innovation","It's new","เป็นสิ่งใหม่"],
+ ["Practical feasibility","We can really do it","เราทำได้จริง"],
+ ["Potential impact","It helps the most people","ช่วยคนได้มากที่สุด"],
+ ["Transferability","It could work in other places too","ใช้ที่อื่นได้ด้วย"],
+ ["Equity","It reaches people who are often left out","เข้าถึงคนที่มักถูกมองข้าม"],
+ ["Meaningful youth participation","Young people get a real say","เยาวชนได้มีเสียงจริง"],
+ ["Fit with existing health-system structures","It fits what we already have","เข้ากับสิ่งที่เรามีอยู่แล้ว"]];
+const CAUSES = [["Not enough money","งบไม่พอ","B2"],["No one is clearly in charge","ไม่มีใครเป็นเจ้าภาพชัดเจน","B1"],["Not enough trained staff","คนที่ผ่านการฝึกไม่พอ","B5"],["People are not joining or using it","คนไม่เข้าร่วมหรือไม่ใช้","B7"],["Some groups push back","บางกลุ่มต่อต้าน","B6"],["It is not working as hoped","ไม่ได้ผลอย่างที่หวัง","B8"]];
+const FIXES = [["Get a senior leader to support it","ขอให้ผู้บริหารระดับสูงสนับสนุน","E1"],["Bring in an outside partner to help","ดึงภาคีจากภายนอกมาช่วย","E1"],["Move money from less urgent work to this","โยกงบจากงานที่ไม่เร่งด่วนมาใช้กับเรื่องนี้","E2"],["Ask young people and families for ideas","ถามความเห็นจากเยาวชนและครอบครัว","E6"],["Try a small change first, then decide","ลองปรับเล็ก ๆ ก่อน แล้วค่อยตัดสินใจ","E4"],["Agree on clear rules with everyone involved","ตกลงกติกาที่ชัดเจนกับทุกฝ่าย","E7"]];
+const EXPERT = [
+ ["X1","The lawyer asks how it fits current tobacco laws. You say:","ทนายถามว่าโครงการนี้เข้ากับกฎหมายยาสูบที่มีอยู่อย่างไร คุณตอบว่า",
+  [["It builds on a current law","ต่อยอดจากกฎหมายที่มีอยู่"],["It fills a gap in current laws","อุดช่องว่างของกฎหมายที่มีอยู่"],["It helps enforce current laws","ช่วยให้บังคับใช้กฎหมายที่มีอยู่ได้ดีขึ้น"],["It may clash with a current law","อาจขัดกับกฎหมายที่มีอยู่"],["It needs a new law first","ต้องมีกฎหมายใหม่ก่อน"]]],
+ ["X2","The lawyer asks where it could be in ten years. You say:","ทนายถามว่าอีกสิบปีโครงการนี้จะไปถึงไหน คุณตอบว่า",
+  [["Still a local project","ยังเป็นโครงการท้องถิ่น"],["A national service","เป็นบริการระดับประเทศ"],["A basis for new tobacco rules","เป็นฐานของกฎยาสูบใหม่"],["Copied by other countries","ประเทศอื่นนำไปใช้"],["Gone when the money runs out","หายไปเมื่อหมดงบ"]]],
+ ["X3","Before growing it, what proof do you ask for first?","ก่อนขยายโครงการ คุณจะขอหลักฐานเรื่องใดก่อน",
+  [["Pilot results on quitting","ผลนำร่องด้านการเลิก"],["Cost per person reached","ต้นทุนต่อคนที่เข้าถึง"],["A legal check","การตรวจทางกฎหมาย"],["Who it reaches and who it misses","เข้าถึงใครและพลาดใคร"],["Harms we did not expect","ผลเสียที่ไม่ได้คาดไว้"]]]];
+const LIKERT = [
+ {id:"Q7.1",m:7,en:"If the council reviews my project, I'd win a senior leader's support before checking the evidence.",th:"ถ้าสภาจะทบทวนโครงการของฉัน ฉันจะหาผู้บริหารระดับสูงมาสนับสนุนก่อน แล้วค่อยตรวจหลักฐาน",agree:"R1",dis:"R3"},
+ {id:"Q7.2",m:8,en:"If money gets tight, I'd rather cut tasks than set owners and dates.",th:"ถ้างบเริ่มตึง ฉันอยากตัดงานบางอย่างออก มากกว่ากำหนดผู้รับผิดชอบและกำหนดเวลา",agree:"R2",dis:"R4"},
+ {id:"Q7.3",m:9,en:"If parents and the school disagree, I'd help them agree rather than try a new approach.",th:"ถ้าผู้ปกครองกับโรงเรียนเห็นต่างกัน ฉันจะช่วยให้สองฝ่ายตกลงกัน มากกว่าลองหาแนวทางใหม่",agree:"R5",dis:"R6"},
+ {id:"Q7.4",m:10,en:"Before a council meeting, I'd focus more on checking an issue fully than on pushing it forward.",th:"เมื่อมีเรื่องต้องเสนอเข้าสภา ฉันจะให้ความสำคัญกับการตรวจสอบความครบถ้วนของเรื่อง มากกว่าการผลักดันเรื่องเข้าสู่การพิจารณา",agree:"R7",dis:"R1"},
+ {id:"Q8.1",m:10,en:"If a teenager brings a new idea, I'd test it on a small scale before checking it against my criteria.",th:"ถ้าวัยรุ่นเสนอไอเดียใหม่ ฉันจะลองทำเล็ก ๆ ก่อนเอาไปเทียบกับเกณฑ์ของฉัน",agree:"R6",dis:"R7"},
+ {id:"Q8.2",m:11,en:"When choosing between different ideas, I'd rely more on supporting evidence than on long-term goals.",th:"เมื่อต้องเลือกแนวคิดในการทำงาน ฉันจะให้ความสำคัญกับหลักฐานที่สนับสนุน มากกว่าการมองเป้าหมายระยะยาว",agree:"R3",dis:"R2"},
+ {id:"Q8.3",m:11,en:"When starting a team project, I'd organize tasks and assign roles rather than build team relationships.",th:"เมื่อเริ่มทำงานร่วมกับทีม ฉันอยากจัดระบบงานและแบ่งหน้าที่ให้ชัดเจน มากกว่าเน้นสร้างความสัมพันธ์ที่ดีในทีม",agree:"R4",dis:"R5"},
+ {id:"Q9.1",m:12,en:"Looking back, I preferred making the final decision myself over letting the team decide.",th:"มองย้อนกลับไป ฉันชอบตัดสินใจขั้นสุดท้ายเอง มากกว่าให้ทีมตัดสินใจ",agree:"α",dis:"β"},
+ {id:"Q9.2",m:12,en:"Looking back, I preferred my own way over getting the agreed plan done.",th:"มองย้อนกลับไป ฉันชอบทำในแบบของตัวเอง มากกว่าทำตามแผนที่ตกลงกันให้เสร็จ",agree:"Ω",dis:"δ"},
+ {id:"Q9.3",m:12,en:"Looking back, I preferred deciding for the team over working in my own way.",th:"มองย้อนกลับไป ฉันชอบเป็นคนตัดสินใจให้ทีม มากกว่าทำงานในแบบของตัวเอง",agree:"α",dis:"Ω"},
+ {id:"Q9.4",m:12,en:"Looking back, I preferred steadily getting tasks done over making the big decisions.",th:"มองย้อนกลับไป ฉันชอบค่อย ๆ ทำงานให้เสร็จทีละอย่าง มากกว่าเป็นคนตัดสินใจเรื่องใหญ่",agree:"δ",dis:"α"},
+ {id:"Q10.1",m:12,en:"Looking back, I preferred handling team problems my way over helping teammates solve them themselves.",th:"มองย้อนกลับไป ฉันมักใช้วิธีและแนวทางของตัวเองจัดการปัญหาในทีม มากกว่าช่วยให้เพื่อนร่วมทีมคิดหาวิธีและลงมือทำได้ด้วยตัวเอง",agree:"Ω",dis:"β"},
+ {id:"Q10.2",m:12,en:"Looking back, I preferred helping others succeed over finishing the agreed work myself.",th:"มองย้อนกลับไป ฉันชอบช่วยให้คนอื่นทำสำเร็จ มากกว่าทำงานที่ตกลงไว้ให้เสร็จด้วยตัวเอง",agree:"β",dis:"δ"},
+ {id:"Q10.3",m:12,en:"Looking back, I preferred letting the team decide together over making the final decision myself.",th:"เมื่อมองย้อนกลับไป ฉันชอบให้ทีมตัดสินใจร่วมกัน มากกว่าเป็นผู้ตัดสินใจขั้นสุดท้ายเอง",agree:"β",dis:"α"},
+ {id:"Q10.4",m:12,en:"Looking back, I preferred working as we agreed over doing it my own way.",th:"มองย้อนกลับไป ฉันชอบทำงานตามแนวทางที่ตกลงร่วมกันไว้ มากกว่าทำตามวิธีของตัวเอง",agree:"δ",dis:"Ω"},
+ {id:"Q11.1",m:12,en:"Next year, I'd rather build a system that lasts than start something new.",th:"ปีหน้า ฉันอยากวางระบบที่อยู่ได้นาน มากกว่าเริ่มสิ่งใหม่",agree:"A",dis:"P"},
+ {id:"Q11.2",m:12,en:"I'd rather bring people together to start work in a new community than cover our team's missing roles.",th:"ฉันอยากชวนคนมาร่วมเริ่มงานในชุมชนใหม่ มากกว่าสลับไปช่วยทำหน้าที่ต่าง ๆ ที่ทีมเดิมยังขาด",agree:"P",dis:"W"},
+ {id:"Q11.3",m:12,en:"When problems come up, I'd fill in where needed before setting up a team-wide system.",th:"ถ้างานมีปัญหา ฉันจะเข้าไปช่วยในจุดที่ขาดก่อน จึงค่อยวางระบบให้ส่วนต่าง ๆ ของทีมทำงานร่วมกัน",agree:"W",dis:"A"}];
+const TB_FAM = {"T": ["Prepare to present our policy plan to the city council", "เตรียมนำเสนอแผนนโยบายต่อสภาเมือง"], "C": ["Call a team meeting to choose which policies to continue, pause or end", "นัดประชุมทีมเพื่อเลือกว่านโยบายไหนจะเดินหน้าต่อ ระงับไว้ก่อน หรือยุติ"], "D": ["Gather our community's statistics and analyse them myself to find new proposals", "รวบรวมสถิติต่าง ๆ ของชุมชน แล้ววิเคราะห์เองเพื่อหาข้อเสนอใหม่"], "E": ["Prepare a work plan deciding who in the team takes which role", "เตรียมแผนงานว่าจะมอบหมายให้ใครในทีมรับหน้าที่อะไร"], "B": ["Meet the parents and schools who still disagree, to hear their concerns", "ไปพบผู้ปกครองและโรงเรียนที่ยังเห็นต่าง เพื่อฟังว่าเขากังวลเรื่องอะไร"], "S": ["Hold an idea meeting with the team to find new approaches", "นัดประชุมระดมไอเดียกับทีม เพื่อหาแนวทางใหม่"], "Q": ["Hold a review meeting to sum up this year and name what went wrong", "นัดประชุมสรุปผลงานปีนี้ และระบุว่าอะไรยังไม่ดี"], "A": ["Set up a system so schools, clinics and our office share updates each month", "วางระบบให้โรงเรียน คลินิก และสำนักงานของเราส่งข้อมูลถึงกันทุกเดือน"], "P": ["Bring last year's project to a new community and start it there", "นำโครงการของปีที่แล้วไปเริ่มใหม่กับชุมชนใหม่"], "W": ["Learn each role in the team, so I can step in where gaps appear", "เรียนรู้ทุกหน้าที่ในทีม เพื่อเข้าไปช่วยได้ในจุดที่ขาด"]};
+const TB_WS = {"α": ["Decide what we do, then tell the team", "ตัดสินใจเองว่าจะทำอะไร แล้วแจ้งทีม"], "β": ["Ask each person what help they need", "ถามแต่ละคนว่าต้องการความช่วยเหลืออะไร"], "Ω": ["Use my own method, and explain to the team why it works", "ใช้วิธีของตัวเอง แล้วอธิบายให้ทีมเข้าใจว่าทำไมวิธีนี้ได้ผล"], "δ": ["Start on it myself right away and keep going until it's done", "ลงมือทำเองทันที และทำต่อเนื่องจนงานเสร็จ"]};
+const ROLE_NAMES = {R1:["Advocacy","ขับเคลื่อน"],R2:["Strategy","ยุทธศาสตร์"],R3:["Evidence","หลักฐาน"],R4:["Delivery","ส่งมอบ"],R5:["Relationships","ความร่วมมือ"],R6:["Creativity","สร้างสรรค์"],R7:["Quality","ตรวจคุณภาพ"]};
+const ROLE_FAMILY = {R1:"T",R2:"C",R3:"D",R4:"E",R5:"B",R6:"S",R7:"Q"};
+const FAMILY = {T:["The Beacon","ประภาคาร"],C:["The Compass","เข็มทิศ"],D:["The Lens","เลนส์"],E:["The Gear","ฟันเฟือง"],B:["The Bridge","สะพาน"],S:["The Candlelight","แสงเทียน"],Q:["The Scales","ตราชั่ง"],A:["The Network","โครงข่าย"],P:["The Seedling","ต้นกล้า"],W:["The Weave","ผืนทอ"]};
+const LEVELS = [["None","ไม่คุ้นเลย"],["A little","เล็กน้อย"],["Some","พอสมควร"],["Moderate","ปานกลาง"],["High","มาก"]];
+
+let S = {};
+let steps = [];
+let pos = 0;
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function buildSteps(){
+  const st=[];
+  st.push({kind:"choice",key:"consent",month:0,eyebrow:"Before you start",en:"I have read the information and agree to take part.",th:"ฉันได้อ่านเอกสารชี้แจงแล้วและยินยอมเข้าร่วม",opts:[["Yes","ใช่"],["No","ไม่ใช่"]]});
+  st.push({kind:"choice",key:"age",month:0,eyebrow:"Before you start",en:"Are you 18 or older?",th:"คุณอายุ 18 ปีขึ้นไปหรือไม่",opts:[["Yes","ใช่"],["No","ไม่ใช่"]]});
+  st.push({kind:"choice",key:"english",month:0,eyebrow:"Before you start",en:"Can you read and answer questions in English?",th:"คุณอ่านและตอบคำถามภาษาอังกฤษได้หรือไม่",opts:[["Yes","ได้"],["No","ไม่ได้"]]});
+  st.push({kind:"text",key:"country",month:0,eyebrow:"Before you start",en:"In which country do you mainly work?",th:"ประเทศที่คุณทำงานเป็นหลัก"});
+  st.push({kind:"choice",key:"work",month:0,eyebrow:"Before you start",en:"What best describes your work?",th:"ข้อใดตรงกับงานของคุณที่สุด",opts:[["Policymaker or government official","ผู้กำหนดนโยบายหรือเจ้าหน้าที่รัฐ"],["Researcher or academic","นักวิจัยหรือนักวิชาการ"],["Health professional","บุคลากรสุขภาพ"],["NGO or civil society","องค์กรพัฒนาเอกชนหรือภาคประชาสังคม"],["Student","นักศึกษา"]],other:true});
+  st.push({kind:"choice",key:"F1",month:0,eyebrow:"Before you start",en:"How familiar are you with tobacco control policy or the WHO FCTC?",th:"คุณคุ้นเคยกับนโยบายควบคุมยาสูบหรือ WHO FCTC เพียงใด",opts:LEVELS});
+  st.push({kind:"choice",key:"F2",month:0,eyebrow:"Before you start",en:"How familiar are you with WHO FCTC Article 2.1 or future-focused tobacco measures?",th:"คุณคุ้นเคยกับ WHO FCTC ข้อ 2.1 หรือมาตรการยาสูบที่มองไปข้างหน้าเพียงใด",opts:LEVELS});
+  st.push({kind:"intro",month:0});
+  st.push({kind:"q1",month:1});
+  for(let i=0;i<NPITCH;i++) st.push({kind:"pitch",idx:i,month:i<2?2:3});
+  st.push({kind:"decision",month:4});
+  st.push({kind:"reason",month:4});
+  st.push({kind:"trouble",which:"b",month:6});
+  st.push({kind:"trouble",which:"e",month:6});
+  EXPERT.forEach((x,i)=>st.push({kind:"expert",idx:i,month:6}));
+  LIKERT.forEach((x,i)=>{ if(x.id==="Q9.1") st.push({kind:"reflect",month:12}); st.push({kind:"likert",idx:i,month:x.m}); });
+  st.push({kind:"promo",month:12});
+  st.push({kind:"famScene",month:12});
+  st.push({kind:"wsScene",month:12});
+  st.push({kind:"result",month:12});
+  return st;
+}
+function expertEligible(){return S.F1!=null && S.F2!=null && S.F1>=3 && S.F2>=2;}
+function visible(step){
+  if(step.kind==="expert") return expertEligible();
+  if(step.kind==="famScene") return needFamScene();
+  if(step.kind==="wsScene") return needWsScene();
+  return true;
+}
+function weight(step){return step.kind==="pitch"?NSUB+1:(["q1","reason","trouble","likert"].includes(step.kind)?1:0);}
+function counted(step){return weight(step)>0;}
+function mainOf(step){
+  if(step.kind==="q1") return 1;
+  if(step.kind==="pitch") return 2+step.idx;
+  if(step.kind==="reason"||step.kind==="trouble") return 2+NPITCH;
+  if(step.kind==="likert") return parseInt(LIKERT[step.idx].id.slice(1));
+  return null;
+}
+function labelOf(step){
+  if(step.kind==="q1") return "Q1";
+  if(step.kind==="pitch") return `Pitch ${step.idx+1}`;
+  if(step.kind==="reason") return "Q6.1";
+  if(step.kind==="trouble") return step.which==="b"?"Q6.2":"Q6.3";
+  if(step.kind==="likert") return LIKERT[step.idx].id;
+  if(step.kind==="expert") return EXPERT[step.idx][0];
+  return "";
+}
+
+function setTrack(month){
+  const t=document.getElementById("track");
+  t.innerHTML="";
+  for(let i=1;i<=12;i++){const s=document.createElement("span");if(i<=month){s.className="on";s.style.backgroundPosition=((i-1)/11*100)+"% 0";}t.appendChild(s);}
+  document.getElementById("monthLabel").textContent=month?`Month ${month} of 12`:"Before you start";
+}
+function setCount(step){
+  const total=steps.reduce((s,x)=>s+weight(x),0);
+  const done=steps.slice(0,pos).reduce((s,x)=>s+weight(x),0);
+  const span=weight(step)>1?`${done+1}–${done+weight(step)}`:`${done+1}`;
+  document.getElementById("countLabel").textContent=counted(step)?`Questions ${span} of ${total} · Main question ${mainOf(step)} of 11`:(step.kind==="expert"?"Expert scene · not counted":(step.kind==="famScene"||step.kind==="wsScene")?"Deciding scene · not counted":"");
+}
+function opt(key,en,th,selected,onclick){
+  return `<button class="opt${selected?" sel":""}" data-k="${esc(key)}"><span class="k">${esc(key)}</span><span><span class="t">${esc(en)}</span>${th?`<span class="t2">${esc(th)}</span>`:""}</span></button>`;
+}
+function head(eyebrow,en,th){return `<div class="eyebrow">${esc(eyebrow)}</div><div><h1>${esc(en)}</h1>${th?`<div class="th">${esc(th)}</div>`:""}</div>`;}
+function navHtml(next){return `<div class="nav"><button class="ghost" id="back" ${pos===0?"disabled":""}>Back</button>${next?`<button class="btn" id="next" ${next.disabled?"disabled":""}>Next</button>`:"<span></span>"}</div>`;}
+function bindBack(){const b=document.getElementById("back");if(b) b.onclick=()=>go(-1);}
+function go(d){
+  let p=pos+d;
+  while(p>=0&&p<steps.length&&!visible(steps[p])) p+=d;
+  if(p<0) p=0;
+  pos=p; render();
+}
+function stopHere(msg,th){
+  const el=document.getElementById("stage");
+  el.innerHTML=head("Thank you",msg,th)+`<div class="nav"><button class="ghost" id="back">Back</button><button class="btn" id="restart">Start again</button></div>`;
+  bindBack();document.getElementById("restart").onclick=restart;
+}
+
+function render(){
+  const step=steps[pos]; const el=document.getElementById("stage");
+  el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade");
+  setTrack(step.month); setCount(step);
+  if(step.kind==="choice"){
+    const cur=S[step.key];
+    let h=head(step.eyebrow,step.en,step.th)+`<div class="opts">`+step.opts.map((o,i)=>opt(String.fromCharCode(65+i),o[0],o[1],cur===i)).join("");
+    if(step.other){h+=opt(String.fromCharCode(65+step.opts.length),"Other","อื่น ๆ",cur==="other")+`<input type="text" id="otherTxt" placeholder="Type your answer" value="${esc(S[step.key+"_txt"]||"")}" ${cur==="other"?"":"hidden"}>`;}
+    h+=`</div>`+navHtml(step.other&&cur==="other"?{disabled:!(S[step.key+"_txt"]||"").trim()}:null);
+    el.innerHTML=h; bindBack();
+    el.querySelectorAll(".opt").forEach((b,i)=>b.onclick=()=>{
+      if(step.other&&i===step.opts.length){S[step.key]="other";render();document.getElementById("otherTxt").focus();return;}
+      S[step.key]=i;
+      if((step.key==="consent"||step.key==="age"||step.key==="english")&&i===1){stopHere("This survey is for adults who agree to take part and can answer in English.","แบบสอบถามนี้สำหรับผู้ใหญ่ที่ยินยอมเข้าร่วมและตอบเป็นภาษาอังกฤษได้");return;}
+      setTimeout(()=>go(1),180);render();
+    });
+    const ot=document.getElementById("otherTxt");
+    if(ot){ot.oninput=()=>{S[step.key+"_txt"]=ot.value;const n=document.getElementById("next");if(n)n.disabled=!ot.value.trim();};}
+    const n=document.getElementById("next"); if(n) n.onclick=()=>go(1);
+  }
+  else if(step.kind==="text"){
+    el.innerHTML=head(step.eyebrow,step.en,step.th)+`<input type="text" id="txt" value="${esc(S[step.key]||"")}" placeholder="e.g. Thailand">`+navHtml({disabled:!(S[step.key]||"").trim()});
+    bindBack(); const t=document.getElementById("txt"),n=document.getElementById("next");
+    t.oninput=()=>{S[step.key]=t.value;n.disabled=!t.value.trim();};
+    t.onkeydown=e=>{if(e.key==="Enter"&&t.value.trim())go(1);};
+    n.onclick=()=>go(1); t.focus();
+  }
+  else if(step.kind==="intro"){
+    el.innerHTML=`<div class="eyebrow">Your year begins</div><div><h1>You now lead a new youth health office. Teen vaping is rising.</h1><h2 style="margin-top:8px">You have one year and up to 5,000 USD.</h2><div class="th">คุณเป็นหัวหน้าสำนักงานสุขภาพเยาวชนแห่งใหม่ การสูบบุหรี่ไฟฟ้าในวัยรุ่นกำลังเพิ่มขึ้น คุณมีเวลาหนึ่งปีและงบไม่เกิน 5,000 USD</div></div>${expertEligible()?'<span class="badge">ผ่านเกณฑ์ผู้เชี่ยวชาญ: จะเห็นฉากทนายหลังเดือนที่ 6</span>':'<span class="badge">ไม่ผ่านเกณฑ์ผู้เชี่ยวชาญ: ไม่เห็นฉากทนาย</span>'}`+navHtml({});
+    bindBack(); document.getElementById("next").onclick=()=>go(1);
+  }
+  else if(step.kind==="q1"){
+    el.innerHTML=head("Main question 1 · Month 1 · First move","You have up to 5,000 USD. Which one do you start first?","คุณมีงบไม่เกิน 5,000 USD จะเริ่มเรื่องไหนก่อน")+`<div class="opts">`+Object.keys(IDEAS).map(k=>opt(k,IDEAS[k][0],IDEAS[k][1],S.pick===k)).join("")+`</div>`+navHtml(null);
+    bindBack();
+    el.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+      const k=b.dataset.k;
+      if(S.pick!==k){S.pick=k;S.rest=shuffle(Object.keys(IDEAS).filter(x=>x!==k)).slice(0,NPITCH);S.dimSeq=shuffle([0,1,2,3,4,5,6]);S.ratings={};S.b=null;S.e=null;}
+      render(); setTimeout(()=>go(1),180);
+    });
+  }
+  else if(step.kind==="pitch"){
+    const idea=S.rest[step.idx], p=PITCH[idea], r=S.ratings[idea]||(S.ratings[idea]={});
+    const dims=[...Array(NSUB).keys()].map(j=>S.dimSeq[(step.idx*NSUB+j)%7]);
+    let h=`<div class="eyebrow">Main question ${2+step.idx} · Month ${step.month} · Team pitch ${step.idx+1} of ${NPITCH}</div>`;
+    h+=`<div><h2>A team member brings you an idea.</h2><div class="th">ทีมงานคนหนึ่งนำแนวคิดมาเสนอคุณ</div></div><div class="pitch"><div class="who">${esc(p[0])}<span class="th"> · ${esc(p[1])}</span></div><p>${esc(p[2])}</p><p class="th">${esc(p[3])}</p></div>`;
+    dims.forEach((d,j)=>{
+      h+=`<div class="sub"><div class="qtext">${j+1}. ${esc(DIMS[d][1])}<div class="th">${esc(DIMS[d][2])}</div></div><div class="scale5" role="group">`+SCALE5.map((s,v)=>`<button data-d="${d}" data-v="${v+1}" class="${r[d]===v+1?"sel":""}"><b>${v+1}</b><span>${s[0]}</span><span class="t2">${s[1]}</span></button>`).join("")+`</div></div>`;
+    });
+    h+=`<div class="sub"><div class="qtext">${NSUB+1}. Overall, how much do you agree with this idea?<div class="th">โดยรวมแล้ว คุณเห็นด้วยกับแนวคิดนี้มากน้อยแค่ไหน</div></div><div class="scale5" role="group">`+AGREE5.map((s,v)=>`<button data-d="agree" data-v="${v+1}" class="${r.agree===v+1?"sel":""}"><b>${v+1}</b><span>${s[0]}</span><span class="t2">${s[1]}</span></button>`).join("")+`</div></div>`;
+    const done=()=>dims.every(d=>r[d])&&r.agree;
+    h+=navHtml({disabled:!done()});
+    el.innerHTML=h; bindBack();
+    el.querySelectorAll(".scale5 button").forEach(b=>b.onclick=()=>{const k=b.dataset.d==="agree"?"agree":+b.dataset.d;r[k]=+b.dataset.v;b.parentNode.querySelectorAll("button").forEach(x=>x.classList.toggle("sel",x===b));document.getElementById("next").disabled=!done();});
+    document.getElementById("next").onclick=()=>go(1);
+  }
+  else if(step.kind==="decision"){
+    el.innerHTML=`<div class="eyebrow">Month 4 · Decision</div><div><h1>After hearing every idea, your team agrees to go with your choice.</h1><div class="th">หลังฟังข้อเสนอทั้งหมด ทีมตกลงเดินหน้าตามที่คุณเลือก</div></div><div class="idea">${esc(IDEAS[S.pick][0])}<div class="th" style="font-weight:400">${esc(IDEAS[S.pick][1])}</div></div>`+navHtml({});
+    bindBack(); document.getElementById("next").onclick=()=>go(1);
+  }
+  else if(step.kind==="reflect"){
+    el.innerHTML=`<div class="eyebrow">One year later · Reflection</div><div><h1>A year has passed. Your director asks you to reflect on yourself.</h1><div class="th">ผ่านไปหนึ่งปี ผู้อำนวยการขอให้คุณกลับมาสะท้อนตัวเอง</div></div>`+navHtml({});
+    bindBack(); document.getElementById("next").onclick=()=>go(1);
+  }
+  else if(step.kind==="reason"){
+    el.innerHTML=head(`Main question ${mainOf(step)} · Month 4 · Defend it`,"You present the plan to your director. She asks: why did you choose this plan?","คุณนำแผนไปเสนอผู้อำนวยการ ผู้อำนวยการถามว่า ทำไมคุณเลือกเสนอแผนนี้")+`<div class="idea">${esc(IDEAS[S.pick][0])}<div class="th" style="font-weight:400">${esc(IDEAS[S.pick][1])}</div></div><div class="opts">`+REASONS.map((r,i)=>opt(String.fromCharCode(65+i),r[1],r[2],S.reason===i)).join("")+`</div>`+navHtml(null);
+    bindBack(); el.querySelectorAll(".opt").forEach((b,i)=>b.onclick=()=>{S.reason=i;render();setTimeout(()=>go(1),180);});
+  }
+  else if(step.kind==="trouble"){
+    const base=step.which==="b"?CAUSES:FIXES; if(!S["ord_"+step.which]) S["ord_"+step.which]=shuffle([...base.keys()]); const ord=S["ord_"+step.which], set=ord.map(i=>base[i]), key=step.which, cur=S[key]==="other"?"other":(S[key]==null?null:ord.indexOf(S[key])), nOpt=set.length;
+    const q=step.which==="b"?["Two months later, your project slows down. Your team meets to find the cause. What do you think is the main cause?","ผ่านไปสองเดือน โครงการของคุณเริ่มเดินช้าลง ทีมเริ่มประชุมกันเพื่อหาสาเหตุ คุณคิดว่าสาเหตุหลักน่าจะเกิดจากอะไรมากที่สุด","Q6.2"]:["As team leader, how would you solve this problem?","ในฐานะหัวหน้าทีม คุณจะเสนอทางออกเพื่อแก้ปัญหานี้อย่างไร","Q6.3"];
+    let h=head(`Main question ${mainOf(step)} · Month 6 · Trouble`,q[0],q[1])+`<div class="idea">${esc(IDEAS[S.pick][0])}<div class="th" style="font-weight:400">${esc(IDEAS[S.pick][1])}</div></div><div class="opts">`+set.map((o,i)=>opt(String.fromCharCode(65+i),o[0],o[1],cur===i)).join("")+opt(String.fromCharCode(65+nOpt),"Something else","อื่น ๆ",cur==="other")+`<input type="text" id="otherTxt" placeholder="Type your answer" value="${esc(S[key+"_txt"]||"")}" ${cur==="other"?"":"hidden"}></div>`;
+    h+=navHtml(cur==="other"?{disabled:!(S[key+"_txt"]||"").trim()}:null);
+    el.innerHTML=h; bindBack();
+    el.querySelectorAll(".opt").forEach((b,i)=>b.onclick=()=>{ if(i===nOpt){S[key]="other";render();document.getElementById("otherTxt").focus();return;} S[key]=ord[i];render();setTimeout(()=>go(1),180);});
+    const ot=document.getElementById("otherTxt"); if(ot) ot.oninput=()=>{S[key+"_txt"]=ot.value;const n=document.getElementById("next");if(n)n.disabled=!ot.value.trim();};
+    const n=document.getElementById("next"); if(n) n.onclick=()=>go(1);
+  }
+  else if(step.kind==="expert"){
+    const x=EXPERT[step.idx], key=x[0], cur=S[key];
+    let h=`<div class="eyebrow">Month 6 · Before the council meeting · expert scene, not counted</div>${step.idx===0?`<div><h2>Before you report to the council, you ask a tobacco lawyer to check your plan.</h2><div class="th">ก่อนรายงานต่อสภา คุณขอให้ทนายด้านยาสูบช่วยตรวจแผนของคุณ</div></div>`:""}<div class="idea">${esc(IDEAS[S.pick][0])}</div><div><h1 style="font-size:22px">${esc(x[1])}</h1><div class="th">${esc(x[2])}</div></div><div class="opts">`+x[3].map((o,i)=>opt(String.fromCharCode(65+i),o[0],o[1],cur===i)).join("")+opt("F","Something else","อื่น ๆ",cur==="other")+`<input type="text" id="otherTxt" placeholder="Type your answer" value="${esc(S[key+"_txt"]||"")}" ${cur==="other"?"":"hidden"}></div>`+navHtml(cur==="other"?{disabled:!(S[key+"_txt"]||"").trim()}:null);
+    el.innerHTML=h; bindBack();
+    el.querySelectorAll(".opt").forEach((b,i)=>b.onclick=()=>{ if(i===5){S[key]="other";render();document.getElementById("otherTxt").focus();return;} S[key]=i;render();setTimeout(()=>go(1),180);});
+    const ot=document.getElementById("otherTxt"); if(ot) ot.oninput=()=>{S[key+"_txt"]=ot.value;const n=document.getElementById("next");if(n)n.disabled=!ot.value.trim();};
+    const n=document.getElementById("next"); if(n) n.onclick=()=>go(1);
+  }
+  else if(step.kind==="likert"){
+    const x=LIKERT[step.idx], cur=S[x.id];
+    const mq=mainOf(step), ey=mq<=8?`Main question ${mq} · Month ${x.m} · Your year`:mq<=10?`Main question ${mq} · After one year · Looking back`:`Main question ${mq} · After one year · Next year`;
+    let h=`<div class="eyebrow">${ey}</div>`;
+    if(x.sc) h+=`<div><h2>${esc(x.sc)}</h2><div class="th">${esc(x.scTh)}</div></div>`;
+    h+=`<div><h1 style="font-size:22px">${esc(x.en)}</h1><div class="th">${esc(x.th)}</div></div>`;
+    h+=`<div class="likert" role="group" aria-label="Strongly disagree to strongly agree">`+[0,1,2,3,4,5,6,7,8].map(v=>`<button data-v="${v}" class="${cur===v?"sel":""}" aria-label="${v<4?(4-v)+" towards disagree":v>4?(v-4)+" towards agree":"Neutral"}"></button>`).join("")+`</div><div class="ends"><span>Strongly disagree<br><span class="th">ไม่เห็นด้วยอย่างยิ่ง</span></span><span style="text-align:right">Strongly agree<br><span class="th">เห็นด้วยอย่างยิ่ง</span></span></div>`+navHtml(null);
+    el.innerHTML=h; bindBack();
+    el.querySelectorAll(".likert button").forEach(b=>b.onclick=()=>{S[x.id]=+b.dataset.v;render();setTimeout(()=>go(1),220);});
+  }
+  else if(step.kind==="promo"){
+    el.innerHTML=`<div class="eyebrow">After one year · Promotion</div><div><h1>Your director reviews your year. Congratulations: you are promoted to lead youth health for the whole region.</h1><div class="th">ผู้อำนวยการทบทวนการทำงานในปีนี้ของคุณแล้ว ยินดีด้วย คุณได้รับอนุมัติให้เลื่อนตำแหน่งเป็นผู้ดูแลงานสุขภาพเยาวชนของทั้งภูมิภาค</div></div>`+navHtml({});
+    bindBack(); document.getElementById("next").onclick=()=>go(1);
+  }
+  else if(step.kind==="famScene"||step.kind==="wsScene"){
+    const fam=step.kind==="famScene", b=baseRule(), key=sceneKey(b,fam?"fam":"ws"), p=fam?"fam":"ws";
+    if(S[p+"Key"]!==key){ S[p+"Key"]=key; S[p+"Pick"]=null;
+      if(fam){const o=famSceneOptions(b); S.famShown=o.opts; S.famDrew=o.drew;} else S.wsShown=shuffle(WSS); }
+    const shown=S[p+"Shown"], txt=fam?TB_FAM:TB_WS;
+    const q=fam?["Your director asks: what is the first thing you will do next year?","ผู้อำนวยการถามคุณว่า ปีหน้าสิ่งแรกที่คุณจะทำหลังรับตำแหน่งคืออะไร"]:["After your promotion, in your first week next year, a big task arrives. How do you take it on?","หลังจากคุณได้รับการเลื่อนตำแหน่ง สัปดาห์แรกของปีหน้า มีงานใหญ่เข้ามา คุณจะรับมืออย่างไร"];
+    el.innerHTML=head("Next year · deciding scene, not counted",q[0],q[1])+`<div class="idea">${esc(IDEAS[S.pick][0])}<div class="th" style="font-weight:400">${esc(IDEAS[S.pick][1])}</div></div><div class="opts">`+shown.map((k,i)=>opt(String.fromCharCode(65+i),txt[k][0],txt[k][1],S[p+"Pick"]===k)).join("")+`</div>`+navHtml(null);
+    bindBack(); el.querySelectorAll(".opt").forEach((btn,i)=>btn.onclick=()=>{S[p+"Pick"]=shown[i];render();setTimeout(()=>go(1),180);});
+  }
+  else if(step.kind==="result"){ renderResult(el); }
+}
+
+const FIX_WS = [null,null,"α","β","δ","β"]; // FIXES order → workstyle evidence for Q6.3 (scoring §3.3)
+const ROLE_FAMS = ["T","C","D","E","B","S","Q"], ALL_FAMS = ["T","C","D","E","B","S","Q","A","P","W"], WSS = ["α","β","Ω","δ"];
+const FAM_POLE = {T:"R1",C:"R2",D:"R3",E:"R4",B:"R5",S:"R6",Q:"R7",A:"A",P:"P",W:"W"};
+const TWINS = [["Q9.1","Q10.3"],["Q9.2","Q10.4"]];
+// Exact fractions {n,d}: S_k = sum of a_jk / number of answered items carrying pole k.
+function fracScores(){
+  const f={};
+  LIKERT.forEach(x=>{ if(S[x.id]==null) return; const v=S[x.id]-4;
+    [[x.agree,Math.max(0,v)],[x.dis,Math.max(0,-v)]].forEach(([k,a])=>{ f[k]=f[k]||{n:0,d:0}; f[k].n+=a; f[k].d++; }); });
+  return f;
+}
+function cmp(a,b){ return a.n*b.d - b.n*a.d; } // >0 when a>b
+function topSet(keys,get){
+  let best=null; keys.forEach(k=>{const v=get(k); if(v&&(!best||cmp(v,best)>0)) best=v;});
+  return best?{M:best,K:keys.filter(k=>get(k)&&cmp(get(k),best)===0)}:{M:null,K:keys.slice()};
+}
+const ge2=v=>v&&v.n>=2*v.d;
+function baseRule(){
+  const f=fracScores(), F=k=>f[FAM_POLE[k]];
+  const pool=ROLE_FAMS.concat(["A","P","W"].filter(k=>ge2(F(k))));
+  const fam=topSet(pool,F), ws=topSet(WSS,k=>f[k]);
+  const twin=TWINS.some(([u,v])=>S[u]!=null&&S[v]!=null&&((S[u]-4>=2&&S[v]-4>=2)||(S[u]-4<=-2&&S[v]-4<=-2)));
+  let wsAux=null;
+  if(ws.K.length>1&&!ws.K.includes("Ω")&&typeof S.e==="number"){const m=FIX_WS[S.e]; if(m&&ws.K.includes(m)) wsAux=m;}
+  return {f,F,pool,fam,ws,wsAux,flagF:!ge2(fam.M),flagW:!ge2(ws.M),twin};
+}
+function needFamScene(){return baseRule().fam.K.length>1;}
+function needWsScene(){const b=baseRule();return b.ws.K.length>1&&!b.wsAux;}
+function famSceneOptions(b){
+  const K=b.fam.K;
+  if(K.length>4) return {opts:shuffle(shuffle(K).slice(0,4)),drew:true};
+  const neg={n:-1,d:1}, val=k=>b.F(k)||neg;
+  const fill=shuffle(ALL_FAMS.filter(k=>!K.includes(k))).sort((x,y)=>cmp(val(y),val(x)));
+  return {opts:shuffle(K.concat(fill.slice(0,4-K.length))),drew:false};
+}
+function sceneKey(b,which){return which==="fam"?b.fam.K.join(","):b.ws.K.join(",");}
+function resolveScene(K,pick,order){return K.includes(pick)?{v:pick,how:"tie_break"}:{v:order.find(k=>K.includes(k)),how:"tie_break_fallback"};}
+function classify(){
+  const b=baseRule(); let family,famHow,work,wsHow;
+  if(b.fam.K.length===1){family=b.fam.K[0];famHow="score";}
+  else {const r=resolveScene(b.fam.K,S.famKey===sceneKey(b,"fam")?S.famPick:null,ALL_FAMS);family=r.v;famHow=r.how;}
+  if(b.ws.K.length===1){work=b.ws.K[0];wsHow="score";}
+  else if(b.wsAux){work=b.wsAux;wsHow="q63_auxiliary";}
+  else {const r=resolveScene(b.ws.K,S.wsKey===sceneKey(b,"ws")?S.wsPick:null,WSS);work=r.v;wsHow=r.how;}
+  return Object.assign(b,{family,famHow,work,wsHow});
+}
+function renderResult(el){
+  const res=classify(), code=res.family+res.work, ch=CHARS[code];
+  const sc={}; Object.keys(res.f).forEach(k=>sc[k]=res.f[k].n/res.f[k].d);
+  const rolesHtml=Object.keys(ROLE_NAMES).map(r=>`<div class="bar"><span>${r} ${ROLE_NAMES[r][0]}</span><span class="b"><i style="width:${(sc[r]||0)/4*100}%"></i></span><span class="v">${(sc[r]||0).toFixed(2)}</span></div>`).join("");
+  const wsHtml=[["α","Leads"],["β","Supports"],["Ω","Independent"],["δ","Doer"]].map(([w,n])=>`<div class="bar"><span>${w} ${n}</span><span class="b"><i style="width:${(sc[w]||0)/4*100}%"></i></span><span class="v">${(sc[w]||0).toFixed(2)}</span></div>`).join("");
+  const famHtml=[["A","Network"],["P","Seedling"],["W","Weave"]].map(([f,n])=>`<div class="bar"><span>${f} ${n}</span><span class="b"><i style="width:${(sc[f]||0)/4*100}%"></i></span><span class="v">${(sc[f]||0).toFixed(2)}</span></div>`).join("");
+  const ideaRows=[`<tr><td>${S.pick}</td><td>${esc(IDEAS[S.pick][0])}</td><td>Q1 first choice</td><td class="num">10.0</td></tr>`].concat(S.rest.map(k=>{const r=S.ratings[k],ks=Object.keys(r).filter(x=>x!=="agree");return `<tr><td>${k}</td><td>${esc(IDEAS[k][0])}</td><td>${ks.map(d=>DIMS[d][0]+" "+r[d]+"/5").join(" · ")} · Agree ${r.agree}/5</td><td class="num">${(0.9*2*r.agree).toFixed(1)}</td></tr>`;})).join("");
+  const bTxt=S.b==="other"?`B0 · ${esc(S.b_txt)}`:`${CAUSES[S.b][2]} · ${esc(CAUSES[S.b][0])}`;
+  const eTxt=S.e==="other"?`E0 · ${esc(S.e_txt)}`:`${FIXES[S.e][2]} · ${esc(FIXES[S.e][0])}`;
+  const expertTxt=expertEligible()?EXPERT.map(x=>`<tr><td>${x[0]}</td><td>${S[x[0]]==="other"?"Other · "+esc(S[x[0]+"_txt"]):esc(x[3][S[x[0]]][0])}</td></tr>`).join(""):`<tr><td colspan="2">ไม่ผ่านเกณฑ์ผู้เชี่ยวชาญ จึงไม่มีข้อมูลส่วนนี้</td></tr>`;
+  const gcd=(a,b)=>b?gcd(b,a%b):a, frs=k=>{const v=res.f[k];if(!v) return "–";const g=gcd(v.n,v.d)||1;return v.n%v.d===0?String(v.n/v.d):`${v.n/g}/${v.d/g}`;};
+  const HOW_F={score:"คะแนนสูงสุดมีตระกูลเดียว",tie_break:"ฉากข้อตัดสินตระกูล",tie_break_fallback:"ลำดับคงที่ เพราะเลือกตัวเลือกนอกชุดที่เท่ากัน"}, HOW_W={score:"คะแนนสูงสุดมีวิธีเดียว",q63_auxiliary:"หลักฐานเสริมจาก Q6.3",tie_break:"ฉากข้อตัดสินวิธีทำงาน",tie_break_fallback:"ลำดับคงที่ เพราะเลือกตัวเลือกนอกชุดที่เท่ากัน"};
+  const famScn=res.famHow.startsWith("tie_break")?` · ฉากแสดง ${S.famShown.join(", ")}${S.famDrew?" (สุ่ม 4 จากชุดที่เท่ากัน)":""} · เลือก ${S.famPick}`:"";
+  const wsScn=res.wsHow.startsWith("tie_break")?` · ฉากแสดง ${S.wsShown.join(", ")} · เลือก ${S.wsPick}`:"";
+  const ruleHtml=`<div class="tablewrap"><table><tbody>
+      <tr><th>คะแนน S<sub>k</sub></th><td>${["R1","R2","R3","R4","R5","R6","R7","A","P","W","α","β","Ω","δ"].map(k=>`${k} ${frs(k)}`).join(" · ")}</td></tr>
+      <tr><th>ตระกูลที่เข้าแข่ง</th><td>${res.pool.join(", ")}</td></tr>
+      <tr><th>ตระกูลคะแนนสูงสุดเท่ากัน (K<sub>F</sub>)</th><td>${res.fam.K.join(", ")}</td></tr>
+      <tr><th>ผลตระกูล</th><td>${res.family} · ${HOW_F[res.famHow]}${famScn}</td></tr>
+      <tr><th>วิธีทำงานคะแนนสูงสุดเท่ากัน (K<sub>W</sub>)</th><td>${res.ws.K.join(", ")}</td></tr>
+      <tr><th>ผลวิธีทำงาน</th><td>${res.work} · ${HOW_W[res.wsHow]}${wsScn}</td></tr>
+      <tr><th>สถานะ</th><td>flag_F ${+res.flagF} · flag_W ${+res.flagW} · ข้อแฝดขัดกัน ${+res.twin}</td></tr>
+    </tbody></table></div>
+    <div class="note">flag_F = 1 เมื่อคะแนนตระกูลสูงสุดต่ำกว่า 2 และ flag_W = 1 เมื่อคะแนนวิธีทำงานสูงสุดต่ำกว่า 2 ผู้ตอบที่มีสถานะนี้ไม่ถูกนำไปคำนวณเฉพาะการวิเคราะห์ที่ใช้ชั้นนั้น ข้อแฝดขัดกันใช้ mark เท่านั้น ไม่ตัดออก</div>`;
+  el.innerHTML=`
+  <div class="result-hero">
+    <div class="eyebrow">Your result · ผลของคุณ</div>
+    <div class="code">${code}</div>
+    <h1>${esc(ch.en)} · ${esc(ch.th)}</h1>
+    <div class="th">${esc(FAMILY[res.family][0])} (${esc(FAMILY[res.family][1])}) × ${res.work}</div>
+  </div>
+  <p>${esc(ch.defEn)}</p>
+  <p class="th">${esc(ch.defTh)}</p>
+  <div><div class="eyebrow">Your role evidence (0–4)</div><div class="bars">${rolesHtml}</div></div>
+  <div><div class="eyebrow">How you work (0–4)</div><div class="bars">${wsHtml}</div></div>
+  <div><div class="eyebrow">Family-specific evidence (0–4)</div><div class="bars">${famHtml}</div></div>
+  <section class="card research">
+    <div class="eyebrow">สำหรับผู้วิจัย · ผู้ตอบไม่เห็นส่วนนี้</div>
+    <h2>ข้อมูลวิจัยที่ได้จากคำตอบชุดเดียวกัน</h2>
+    <div class="tablewrap"><table><thead><tr><th>แนวคิด</th><th>ข้อความ</th><th>มิติที่ถามและคะแนน 1–5</th><th>คะแนนแนวคิด</th></tr></thead><tbody>${ideaRows}</tbody></table></div>
+    <div class="tablewrap"><table><tbody>
+      <tr><th>เหตุผล (Q6.1)</th><td>${esc(REASONS[S.reason][0])}</td></tr>
+      <tr><th>อุปสรรค (Q6.2)</th><td>${bTxt}</td></tr>
+      <tr><th>เงื่อนไขเอื้อ (Q6.3)</th><td>${eTxt}</td></tr>
+      <tr><th>ประเทศ / งาน</th><td>${esc(S.country||"")} · ${S.work==="other"?esc(S.work_txt):esc((buildSteps()[4].opts[S.work]||[""])[0])}</td></tr>
+    </tbody></table></div>
+    <h2>กติกาเลือกตัวละคร</h2>
+    ${ruleHtml}
+    <div class="tablewrap"><table><thead><tr><th>ฉากผู้เชี่ยวชาญ</th><th>คำตอบ</th></tr></thead><tbody>${expertTxt}</tbody></table></div>
+  </section>
+  <div class="nav"><button class="ghost" id="back">Back</button><button class="btn" id="restart">Play again</button></div>`;
+  bindBack(); document.getElementById("restart").onclick=restart;
+}
+function restart(){S={};pos=0;render();}
+
+document.getElementById("thToggle").onchange=e=>document.body.classList.toggle("noth",!e.target.checked);
+steps=buildSteps();
+render();
+</script>
+</body>
+</html>
